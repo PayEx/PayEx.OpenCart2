@@ -156,11 +156,9 @@ class ControllerPaymentPayex extends Controller
                         $this->model_module_payex->setAsCaptured($transaction_id);
 
                         // Set Order Status
-                        $this->model_sale_order->addOrderHistory($order_id, array(
-                            'order_status_id' => $data['payex_completed_status_id'],
-                            'notify' => true,
-                            'comment' => ''
-                        ));
+                        $order_status_id = $data['payex_completed_status_id'];
+                        $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . (int)$order_status_id . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', date_added = NOW()");
 
                         // Create Invoice Number
                         $this->model_sale_order->createInvoiceNo($order_id);
@@ -193,11 +191,9 @@ class ControllerPaymentPayex extends Controller
                         $this->model_module_payex->setAsCanceled($transaction_id);
 
                         // Set Order Status
-                        $this->model_sale_order->addOrderHistory($order_id, array(
-                            'order_status_id' => $data['payex_canceled_status_id'],
-                            'notify' => false,
-                            'comment' => ''
-                        ));
+                        $order_status_id = $data['payex_canceled_status_id'];
+                        $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . (int)$order_status_id . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', date_added = NOW()");
 
                         $json = array(
                             'status' => 'ok',
@@ -233,11 +229,9 @@ class ControllerPaymentPayex extends Controller
                         $this->model_module_payex->setAsRefunded($transaction_id, $total_refunded);
 
                         // Set Order Status
-                        $this->model_sale_order->addOrderHistory($order_id, array(
-                            'order_status_id' => $data['payex_refunded_status_id'],
-                            'notify' => false,
-                            'comment' => ''
-                        ));
+                        $order_status_id = $data['payex_refunded_status_id'];
+                        $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . (int)$order_status_id . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', date_added = NOW()");
 
                         $json = array(
                             'status' => 'ok',
