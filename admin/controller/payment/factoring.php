@@ -136,7 +136,7 @@ class ControllerPaymentFactoring extends Controller
                             'amount' => round(100 * $order['total']),
                             'orderId' => $order_id,
                             'vatAmount' => 0,
-                            'additionalValues' => 'INVOICESALE_ORDERLINES=' . urlencode($this->getInvoiceExtraPrintBlocksXML($order_id))
+                            'additionalValues' => 'FINANCINGINVOICE_ORDERLINES=' . urlencode($this->getInvoiceExtraPrintBlocksXML($order_id))
                         );
                         $result = $this->getPx()->Capture5($params);
                         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
@@ -153,11 +153,9 @@ class ControllerPaymentFactoring extends Controller
                         $this->model_module_factoring->setAsCaptured($transaction_id);
 
                         // Set Order Status
-                        $this->model_sale_order->addOrderHistory($order_id, array(
-                            'order_status_id' => $this->data['factoring_completed_status_id'],
-                            'notify' => true,
-                            'comment' => ''
-                        ));
+                        $order_status_id = $data['factoring_completed_status_id'];
+                        $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . (int)$order_status_id . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', date_added = NOW()");
 
                         // Create Invoice Number
                         $this->model_sale_order->createInvoiceNo($order_id);
@@ -190,11 +188,9 @@ class ControllerPaymentFactoring extends Controller
                         $this->model_module_factoring->setAsCanceled($transaction_id);
 
                         // Set Order Status
-                        $this->model_sale_order->addOrderHistory($order_id, array(
-                            'order_status_id' => $this->data['factoring_canceled_status_id'],
-                            'notify' => false,
-                            'comment' => ''
-                        ));
+                        $order_status_id = $data['factoring_canceled_status_id'];
+                        $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . (int)$order_status_id . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', date_added = NOW()");
 
                         $json = array(
                             'status' => 'ok',
@@ -230,11 +226,9 @@ class ControllerPaymentFactoring extends Controller
                         $this->model_module_factoring->setAsRefunded($transaction_id, $total_refunded);
 
                         // Set Order Status
-                        $this->model_sale_order->addOrderHistory($order_id, array(
-                            'order_status_id' => $this->data['factoring_refunded_status_id'],
-                            'notify' => false,
-                            'comment' => ''
-                        ));
+                        $order_status_id = $data['factoring_refunded_status_id'];
+                        $this->db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . (int)$order_status_id . "', date_modified = NOW() WHERE order_id = '" . (int)$order_id . "'");
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "order_history SET order_id = '" . (int)$order_id . "', order_status_id = '" . (int)$order_status_id . "', date_added = NOW()");
 
                         $json = array(
                             'status' => 'ok',

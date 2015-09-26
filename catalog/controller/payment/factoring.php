@@ -22,6 +22,7 @@ class ControllerPaymentFactoring extends Controller
         $data['text_description'] = $this->language->get('text_description');
         $data['text_social_security_number'] = $this->language->get('text_social_security_number');
         $data['text_select_payment_method'] = $this->language->get('text_select_payment_method');
+        $data['text_financing_invoice'] = $this->language->get('text_financing_invoice');
         $data['text_factoring'] = $this->language->get('text_factoring');
         $data['text_part_payment'] = $this->language->get('text_part_payment');
         $data['button_confirm'] = $this->language->get('button_confirm');
@@ -50,13 +51,16 @@ class ControllerPaymentFactoring extends Controller
 
         $order = $this->model_checkout_order->getOrder($order_id);
 
-        // Call PxVerification.GetConsumerLegalAddress
+        // Call PxOrder.GetAddressByPaymentMethod
         $params = array(
             'accountNumber' => '',
-            'countryCode' => $order['payment_iso_code_2'], // Supported only "SE"
-            'socialSecurityNumber' => $ssn
+            'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXFINANCINGINVOICESE' : 'PXFINANCINGINVOICENO',
+            'ssn' => $ssn,
+            'zipcode' => '',
+            'countryCode' => $order['payment_iso_code_2'],
+            'ipAddress' => $order['ip']
         );
-        $result = $this->getPx()->GetConsumerLegalAddress($params);
+        $result = $this->getPx()->GetAddressByPaymentMethod($params);
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
             if (preg_match('/\bInvalid parameter:SocialSecurityNumber\b/i', $result['description'])) {
                 $json = array(
@@ -140,29 +144,71 @@ class ControllerPaymentFactoring extends Controller
         }
         $orderRef = $result['orderRef'];
 
-        // Call PxOrder.PurchaseInvoiceSale / PxOrder.PurchasePartPaymentSale
-        $params = array(
-            'accountNumber' => '',
-            'orderRef' => $orderRef,
-            'socialSecurityNumber' => $ssn,
-            'legalFirstName' => $order['payment_firstname'],
-            'legalLastName' => $order['payment_lastname'],
-            'legalStreetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
-            'legalCoAddress' => '',
-            'legalPostNumber' => $order['payment_postcode'],
-            'legalCity' => $order['payment_city'],
-            'legalCountryCode' => $order['payment_iso_code_2'],
-            'email' => $order['email'],
-            'msisdn' => (substr($order['telephone'], 0, 1) === '+') ? $order['telephone'] : '+' . $order['telephone'],
-            'ipAddress' => $order['ip'],
-        );
+        // Perform Payment
+        switch ($view) {
+            case 'FINANCING':
+                // Call PxOrder.PurchaseFinancingInvoice
+                $params = array(
+                    'accountNumber' => '',
+                    'orderRef' => $orderRef,
+                    'socialSecurityNumber' => $ssn,
+                    'legalName' => $order['payment_firstname'] . ' ' . $order['payment_lastname'],
+                    'streetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
+                    'coAddress' => '',
+                    'zipCode' => $order['payment_postcode'],
+                    'city' => $order['payment_city'],
+                    'countryCode' => $order['payment_iso_code_2'],
+                    'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXFINANCINGINVOICESE' : 'PXFINANCINGINVOICENO',
+                    'email' => $order['email'],
+                    'msisdn' => ( substr( $order['telephone'], 0, 1 ) === '+' ) ? $order['telephone'] : '+' . $order['telephone'],
+                    'ipAddress' => $order['ip']
+                );
+                $result = $this->getPx()->PurchaseFinancingInvoice($params);
+                break;
+            case 'FACTORING':
+                // Call PxOrder.PurchaseInvoiceSale
+                $params = array(
+                    'accountNumber' => '',
+                    'orderRef' => $orderRef,
+                    'socialSecurityNumber' => $ssn,
+                    'legalFirstName' => $order['payment_firstname'],
+                    'legalLastName' => $order['payment_lastname'],
+                    'legalStreetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
+                    'legalCoAddress' => '',
+                    'legalPostNumber' => $order['payment_postcode'],
+                    'legalCity' => $order['payment_city'],
+                    'legalCountryCode' => $order['payment_iso_code_2'],
+                    'email' => $order['email'],
+                    'msisdn' => (substr($order['telephone'], 0, 1) === '+') ? $order['telephone'] : '+' . $order['telephone'],
+                    'ipAddress' => $order['ip'],
+                );
 
-        if ($view === 'FACTORING') {
-            $result = $this->getPx()->PurchaseInvoiceSale($params);
-        } else {
-            $result = $this->getPx()->PurchasePartPaymentSale($params);
+                $result = $this->getPx()->PurchaseInvoiceSale($params);
+                break;
+            case 'CREDITACCOUNT':
+                // Call PxOrder.PurchasePartPaymentSale
+                $params = array(
+                    'accountNumber' => '',
+                    'orderRef' => $orderRef,
+                    'socialSecurityNumber' => $ssn,
+                    'legalFirstName' => $order['payment_firstname'],
+                    'legalLastName' => $order['payment_lastname'],
+                    'legalStreetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
+                    'legalCoAddress' => '',
+                    'legalPostNumber' => $order['payment_postcode'],
+                    'legalCity' => $order['payment_city'],
+                    'legalCountryCode' => $order['payment_iso_code_2'],
+                    'email' => $order['email'],
+                    'msisdn' => (substr($order['telephone'], 0, 1) === '+') ? $order['telephone'] : '+' . $order['telephone'],
+                    'ipAddress' => $order['ip'],
+                );
+
+                $result = $this->getPx()->PurchasePartPaymentSale($params);
+                break;
+            default:
+                $this->session->data['payex_error'] = 'Invalid payment mode';
+                $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
         }
-
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK') {
             $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
             if (preg_match('/\bInvalid parameter:msisdn\b/i', $result['description'])) {

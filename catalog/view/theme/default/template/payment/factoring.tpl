@@ -5,7 +5,8 @@
         <p>
             <label for="factoring-menu"><?php echo $text_select_payment_method; ?></label>
             <select name="factoring-menu" id="factoring-menu" class="required-entry">
-                <option selected value="FACTORING"><?php echo $text_factoring; ?></option>
+                <option selected value="FINANCING"><?php echo $text_financing_invoice; ?></option>
+                <option value="FACTORING"><?php echo $text_factoring; ?></option>
                 <option value="CREDITACCOUNT"><?php echo $text_part_payment; ?></option>
             </select>
         </p>

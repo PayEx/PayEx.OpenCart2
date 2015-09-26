@@ -89,6 +89,9 @@
                                     <?php if ($factoring_type === 'SELECT') { echo 'selected="selected" '; } ?>
                                     value="SELECT">User select</option>
                                     <option
+                                    <?php if ($factoring_type === 'FINANCING') { echo 'selected="selected" '; } ?>
+                                    value="FINANCING">Financing Invoice</option>
+                                    <option
                                     <?php if ($factoring_type === 'FACTORING') { echo 'selected="selected" '; } ?>
                                     value="FACTORING">Invoice 2.0 (Factoring)</option>
                                     <option
