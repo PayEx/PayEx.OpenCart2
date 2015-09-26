@@ -163,7 +163,7 @@ class ControllerPaymentFactoring extends Controller
                         $json = array(
                             'status' => 'ok',
                             'message' => 'Order successfully captured.',
-                            'label' => $this->data['text_captured']
+                            'label' => $data['text_captured']
                         );
                         $this->response->setOutput(json_encode($json));
                         return;
@@ -195,7 +195,7 @@ class ControllerPaymentFactoring extends Controller
                         $json = array(
                             'status' => 'ok',
                             'message' => 'Order successfully canceled.',
-                            'label' => $this->data['text_canceled']
+                            'label' => $data['text_canceled']
                         );
                         $this->response->setOutput(json_encode($json));
                         return;
@@ -233,7 +233,7 @@ class ControllerPaymentFactoring extends Controller
                         $json = array(
                             'status' => 'ok',
                             'message' => 'Order successfully refunded.',
-                            'label' => $this->data['text_refunded']
+                            'label' => $data['text_refunded']
                         );
                         $this->response->setOutput(json_encode($json));
                         return;
