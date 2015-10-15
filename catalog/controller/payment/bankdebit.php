@@ -84,7 +84,7 @@ class ControllerPaymentBankdebit extends Controller
             'description' => html_entity_decode($order['store_name'], ENT_QUOTES, 'UTF-8'),
             'clientIPAddress' => $order['ip'],
             'clientIdentifier' => 'USERAGENT=' . $order['user_agent'],
-            'additionalValues' => $this->config->get('bankdebit_responsive') ? 'USECSS=RESPONSIVEDESIGN' : '',
+            'additionalValues' => $this->config->get('bankdebit_responsive') ? 'RESPONSIVE=1' : '',
             'externalID' => '',
             'returnUrl' => $this->url->link('payment/' . $this->_module_name . '/success', '', 'SSL'),
             'view' => 'DIRECTDEBIT',
