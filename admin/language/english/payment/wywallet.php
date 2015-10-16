@@ -16,6 +16,7 @@ $_['text_mode'] = 'Mode';
 $_['text_paymentview'] = 'Payment View';
 $_['text_transactiontype'] = 'Transaction Type';
 $_['text_responsive'] = 'Enable Responsive Skinning';
+$_['text_checkout_info'] = 'Send order lines and billing/delivery addresses to PayEx';
 $_['text_total'] = 'Total:<br /><span class="help">The checkout total the order must reach before this payment method becomes active.</span>';
 $_['text_complete_status'] = 'Completed Status';
 $_['text_pending_status'] = 'Pending Status';

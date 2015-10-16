@@ -94,131 +94,133 @@ class ControllerPaymentPayex extends Controller
         $redirectUrl = $result['redirectUrl'];
         $orderRef = $result['orderRef'];
 
-        // add Order Lines
-        $i = 1;
-        foreach ($this->cart->getProducts() as $product) {
-            $qty = $product['quantity'];
-            $price = $product['price'] * $qty;
-            $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
-            $taxPrice = $priceWithTax - $price;
-            $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
+        if ($this->config->get('payex_checkout_info')) {
+            // add Order Lines
+            $i = 1;
+            foreach ($this->cart->getProducts() as $product) {
+                $qty = $product['quantity'];
+                $price = $product['price'] * $qty;
+                $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
+                $taxPrice = $priceWithTax - $price;
+                $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
 
-            // Call PxOrder.AddSingleOrderLine2
+                // Call PxOrder.AddSingleOrderLine2
+                $params = array(
+                    'accountNumber' => '',
+                    'orderRef' => $orderRef,
+                    'itemNumber' => $i,
+                    'itemDescription1' => $product['name'],
+                    'itemDescription2' => '',
+                    'itemDescription3' => '',
+                    'itemDescription4' => '',
+                    'itemDescription5' => '',
+                    'quantity' => $qty,
+                    'amount' => (int)(100 * $priceWithTax), //must include tax
+                    'vatPrice' => (int)(100 * round($taxPrice, 2)),
+                    'vatPercent' => (int)(100 * $taxPercent)
+                );
+                $result = $this->getPx()->AddSingleOrderLine2($params);
+                if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
+                    $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
+                    $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                }
+
+                $i++;
+            }
+
+            // Add Shipping Line
+            $shipping_method = $this->session->data['shipping_method'];
+            if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
+                $shipping = $shipping_method['cost'];
+                $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
+                $shippingTax = $shippingWithTax - $shipping;
+                $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
+
+                // Call PxOrder.AddSingleOrderLine2
+                $params = array(
+                    'accountNumber' => '',
+                    'orderRef' => $orderRef,
+                    'itemNumber' => $i,
+                    'itemDescription1' => $shipping_method['title'],
+                    'itemDescription2' => '',
+                    'itemDescription3' => '',
+                    'itemDescription4' => '',
+                    'itemDescription5' => '',
+                    'quantity' => 1,
+                    'amount' => (int)(100 * $shippingWithTax), //must include tax
+                    'vatPrice' => (int)(100 * round($shippingTax, 2)),
+                    'vatPercent' => (int)(100 * $shippingTaxPercent)
+                );
+                $result = $this->getPx()->AddSingleOrderLine2($params);
+                if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
+                    $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
+                    $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                }
+
+                $i++;
+            }
+
+            // Add Order Address
+            // Call PxOrder.AddOrderAddress2
             $params = array(
                 'accountNumber' => '',
                 'orderRef' => $orderRef,
-                'itemNumber' => $i,
-                'itemDescription1' => $product['name'],
-                'itemDescription2' => '',
-                'itemDescription3' => '',
-                'itemDescription4' => '',
-                'itemDescription5' => '',
-                'quantity' => $qty,
-                'amount' => (int)(100 * $priceWithTax), //must include tax
-                'vatPrice' => (int)(100 * round($taxPrice, 2)),
-                'vatPercent' => (int)(100 * $taxPercent)
+                'billingFirstName' => $order['payment_firstname'],
+                'billingLastName' => $order['payment_lastname'],
+                'billingAddress1' => $order['payment_address_1'],
+                'billingAddress2' => $order['payment_address_2'],
+                'billingAddress3' => '',
+                'billingPostNumber' => $order['payment_postcode'],
+                'billingCity' => $order['payment_city'],
+                'billingState' => $order['payment_zone'],
+                'billingCountry' => $order['payment_country'],
+                'billingCountryCode' => $order['payment_iso_code_2'],
+                'billingEmail' => $order['email'],
+                'billingPhone' => $order['telephone'],
+                'billingGsm' => '',
             );
-            $result = $this->getPx()->AddSingleOrderLine2($params);
-            if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-                $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
-            }
 
-            $i++;
-        }
-
-        // Add Shipping Line
-        $shipping_method = $this->session->data['shipping_method'];
-        if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
-            $shipping = $shipping_method['cost'];
-            $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
-            $shippingTax = $shippingWithTax - $shipping;
-            $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
-
-            // Call PxOrder.AddSingleOrderLine2
-            $params = array(
-                'accountNumber' => '',
-                'orderRef' => $orderRef,
-                'itemNumber' => $i,
-                'itemDescription1' => $shipping_method['title'],
-                'itemDescription2' => '',
-                'itemDescription3' => '',
-                'itemDescription4' => '',
-                'itemDescription5' => '',
-                'quantity' => 1,
-                'amount' => (int)(100 * $shippingWithTax), //must include tax
-                'vatPrice' => (int)(100 * round($shippingTax, 2)),
-                'vatPercent' => (int)(100 * $shippingTaxPercent)
-            );
-            $result = $this->getPx()->AddSingleOrderLine2($params);
-            if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-                $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
-            }
-
-            $i++;
-        }
-
-        // Add Order Address
-        // Call PxOrder.AddOrderAddress2
-        $params = array(
-            'accountNumber' => '',
-            'orderRef' => $orderRef,
-            'billingFirstName' => $order['payment_firstname'],
-            'billingLastName' => $order['payment_lastname'],
-            'billingAddress1' => $order['payment_address_1'],
-            'billingAddress2' => $order['payment_address_2'],
-            'billingAddress3' => '',
-            'billingPostNumber' => $order['payment_postcode'],
-            'billingCity' => $order['payment_city'],
-            'billingState' => $order['payment_zone'],
-            'billingCountry' => $order['payment_country'],
-            'billingCountryCode' => $order['payment_iso_code_2'],
-            'billingEmail' => $order['email'],
-            'billingPhone' => $order['telephone'],
-            'billingGsm' => '',
-        );
-
-        $shipping_params = array(
-            'deliveryFirstName' => '',
-            'deliveryLastName' => '',
-            'deliveryAddress1' => '',
-            'deliveryAddress2' => '',
-            'deliveryAddress3' => '',
-            'deliveryPostNumber' => '',
-            'deliveryCity' => '',
-            'deliveryState' => '',
-            'deliveryCountry' => '',
-            'deliveryCountryCode' => '',
-            'deliveryEmail' => '',
-            'deliveryPhone' => '',
-            'deliveryGsm' => '',
-        );
-
-        if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
             $shipping_params = array(
-                'deliveryFirstName' => $order['shipping_firstname'],
-                'deliveryLastName' => $order['shipping_lastname'],
-                'deliveryAddress1' => $order['shipping_address_1'],
-                'deliveryAddress2' => $order['shipping_address_2'],
+                'deliveryFirstName' => '',
+                'deliveryLastName' => '',
+                'deliveryAddress1' => '',
+                'deliveryAddress2' => '',
                 'deliveryAddress3' => '',
-                'deliveryPostNumber' => $order['shipping_postcode'],
-                'deliveryCity' => $order['shipping_city'],
-                'deliveryState' => $order['shipping_zone'],
-                'deliveryCountry' => $order['shipping_country'],
-                'deliveryCountryCode' => $order['shipping_iso_code_2'],
-                'deliveryEmail' => $order['email'],
-                'deliveryPhone' => $order['telephone'],
+                'deliveryPostNumber' => '',
+                'deliveryCity' => '',
+                'deliveryState' => '',
+                'deliveryCountry' => '',
+                'deliveryCountryCode' => '',
+                'deliveryEmail' => '',
+                'deliveryPhone' => '',
                 'deliveryGsm' => '',
             );
-        }
 
-        $params += $shipping_params;
+            if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
+                $shipping_params = array(
+                    'deliveryFirstName' => $order['shipping_firstname'],
+                    'deliveryLastName' => $order['shipping_lastname'],
+                    'deliveryAddress1' => $order['shipping_address_1'],
+                    'deliveryAddress2' => $order['shipping_address_2'],
+                    'deliveryAddress3' => '',
+                    'deliveryPostNumber' => $order['shipping_postcode'],
+                    'deliveryCity' => $order['shipping_city'],
+                    'deliveryState' => $order['shipping_zone'],
+                    'deliveryCountry' => $order['shipping_country'],
+                    'deliveryCountryCode' => $order['shipping_iso_code_2'],
+                    'deliveryEmail' => $order['email'],
+                    'deliveryPhone' => $order['telephone'],
+                    'deliveryGsm' => '',
+                );
+            }
 
-        $result = $this->getPx()->AddOrderAddress2($params);
-        if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-            // @todo Error $result['errorCode'] . ' (' . $result['description'] . ')'
-            exit('Error: ' . $result['errorCode'] . ' (' . $result['description'] . ')');
+            $params += $shipping_params;
+
+            $result = $this->getPx()->AddOrderAddress2($params);
+            if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
+                // @todo Error $result['errorCode'] . ' (' . $result['description'] . ')'
+                exit('Error: ' . $result['errorCode'] . ' (' . $result['description'] . ')');
+            }
         }
 
         $this->response->redirect($redirectUrl);

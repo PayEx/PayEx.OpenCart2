@@ -112,6 +112,18 @@
                 </select></td>
         </tr>
         <tr>
+            <td><?php echo $text_checkout_info; ?></td>
+            <td><select name="bankdebit_checkout_info">
+                    <?php if ($bankdebit_checkout_info): ?>
+                    <option value="1" selected="selected"><?php echo $text_enabled; ?></option>
+                    <option value="0"><?php echo $text_disabled; ?></option>
+                    <?php else: ?>
+                    <option value="1"><?php echo $text_enabled; ?></option>
+                    <option value="0" selected="selected"><?php echo $text_disabled; ?></option>
+                    <?php endif; ?>
+                </select></td>
+        </tr>
+        <tr>
             <td><?php echo $text_total; ?></td>
             <td><input type="text" name="bankdebit_total" value="<?php echo $bankdebit_total; ?>"/></td>
         </tr>
