@@ -56,7 +56,7 @@ class ControllerPaymentFactoring extends Controller
             'accountNumber' => '',
             'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXFINANCINGINVOICESE' : 'PXFINANCINGINVOICENO',
             'ssn' => $ssn,
-            'zipcode' => '',
+            'zipcode' => $order['payment_postcode'],
             'countryCode' => $order['payment_iso_code_2'],
             'ipAddress' => $order['ip']
         );
