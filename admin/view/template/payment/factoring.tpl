@@ -91,9 +91,9 @@
                                     <option
                                     <?php if ($factoring_type === 'FINANCING') { echo 'selected="selected" '; } ?>
                                     value="FINANCING">Financing Invoice</option>
-                                    <option
+                                    <!-- <option
                                     <?php if ($factoring_type === 'FACTORING') { echo 'selected="selected" '; } ?>
-                                    value="FACTORING">Invoice 2.0 (Factoring)</option>
+                                    value="FACTORING">Invoice 2.0 (Factoring)</option> -->
                                     <option
                                     <?php if ($factoring_type === 'CREDITACCOUNT') { echo 'selected="selected" '; } ?>
                                     value="CREDITACCOUNT">Part Payment</option>

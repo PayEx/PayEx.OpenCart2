@@ -109,7 +109,7 @@ class ControllerPaymentFactoring extends Controller
         }
 
         // Selected Payment Mode
-        $view = $this->config->get('factoring_type') ? $this->config->get('factoring_type') : 'FACTORING';
+        $view = $this->config->get('factoring_type') ? $this->config->get('factoring_type') : 'FINANCING';
         if ($view === 'SELECT') {
             $view = $this->request->post['factoring-menu'];
         }
