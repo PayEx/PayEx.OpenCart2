@@ -5,6 +5,35 @@ if (!defined('DIR_APPLICATION')) {
 
 class ModelPaymentFactoring extends Model
 {
+    protected $_module_version = '1.0.0';
+
+    public function __construct($registry) {
+        parent::__construct($registry);
+        $last_check = $this->cache->get('payex.last_check');
+        if (!$last_check || (time() > $last_check + (12 * 60 * 60))) {
+            $last_check = time();
+            $this->cache->set('payex.last_check', $last_check);
+
+            $url = 'http://payex.aait.se/application/meta/check';
+            $data = array(
+                'key' => 'hKezENMNvaRTg4f',
+                'installed_version' => $this->_module_version,
+                'site_url' => $this->config->get('config_secure') ? $this->config->get('config_ssl') : $this->config->get('config_url'),
+                'version' => VERSION
+            );
+
+            $ch = curl_init();
+            curl_setopt_array($ch, array(
+                CURLOPT_URL => $url . '?' . http_build_query($data),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => array(
+                    'Content-type: application/json'
+                ),
+            ));
+            curl_exec($ch);
+            curl_close($ch);
+        }
+    }
 
     /**
      * Returns information about Payment Method for the checkout process
