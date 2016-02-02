@@ -81,7 +81,6 @@ class ControllerPaymentPayex extends Controller
     {
         $this->load->language('payment/' . $this->_module_name);
         $this->load->model('setting/setting');
-        $this->load->library('currency');
 
         // Install DB Tables
         $this->load->model('module/payex');
