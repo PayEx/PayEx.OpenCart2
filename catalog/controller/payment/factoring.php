@@ -214,6 +214,9 @@ class ControllerPaymentFactoring extends Controller
             if (preg_match('/\bInvalid parameter:msisdn\b/i', $result['description'])) {
                 $this->session->data['payex_error'] = $this->language->get('error_invalid_msisdn');
             }
+			else if (preg_match('/\bCreditCheckNotApproved\b/i', $result['errorCode'])) {
+				$this->session->data['payex_error'] = $this->language->get('error_creditCheckNotApproved');
+			}
 
             $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
         }
