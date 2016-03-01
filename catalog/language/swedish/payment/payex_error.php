@@ -18,3 +18,4 @@ $_['error_transaction_authorized_cant_capture'] = 'Transaktionen godkändes. Men
 $_['error_payex'] = 'PayEx error: %s';
 $_['error_invalid_order_reference'] = 'Ogiltig order reference';
 $_['error_invalid_bank'] = 'Ogiltig bank';
+$_['error_creditCheckNotApproved'] = 'Tyvärr kan kredit ej medges, vänligen prova annat betalsätt.';

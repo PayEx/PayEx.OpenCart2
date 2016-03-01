@@ -18,3 +18,4 @@ $_['error_transaction_authorized_cant_capture'] = 'Transaction authorized. But c
 $_['error_payex'] = 'PayEx error: %s';
 $_['error_invalid_order_reference'] = 'Invalid order reference';
 $_['error_invalid_bank'] = 'Invalid bank';
+$_['error_creditCheckNotApproved'] = 'Credit check was declined, please try another payment option.';
