@@ -128,14 +128,39 @@ class ControllerPaymentFactoring extends Controller
 
                 switch ($this->request->post['action']) {
                     case 'capture':
+                        // Load saved order items
+                        $items = $this->load_saved_items($order_id);
+                        if (count($items) === 0) {
+                            $json = array(
+                                'status' => 'error',
+                                'message' => 'No saved items in order'
+                            );
+                            $this->response->setOutput(json_encode($json));
+                            return;
+                        }
+
+                        // Calculate order amount
+                        if (function_exists('array_column')) {
+                            $amount = array_sum(array_column($items, 'amount'));
+                        } else {
+                            // For older PHP versions (< 5.5.0)
+                            $amount = 0;
+                            foreach ($items as $item) {
+                                $amount += $item['amount'];
+                            }
+                        }
+
+                        // Generate XML content
+                        $xml = $this->getInvoiceExtraPrintBlocksXML($items);
+
                         // Call PxOrder.Capture5
                         $params = array(
                             'accountNumber' => '',
                             'transactionNumber' => $transaction_id,
-                            'amount' => round(100 * $order['total']),
+                            'amount' => round(100 * $amount),
                             'orderId' => $order_id,
                             'vatAmount' => 0,
-                            'additionalValues' => 'FINANCINGINVOICE_ORDERLINES=' . urlencode($this->getInvoiceExtraPrintBlocksXML($order_id))
+                            'additionalValues' => 'FINANCINGINVOICE_ORDERLINES=' . urlencode($xml)
                         );
                         $result = $this->getPx()->Capture5($params);
                         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
@@ -242,6 +267,9 @@ class ControllerPaymentFactoring extends Controller
             }
 
             if ($this->validate()) {
+                // Install DB Tables
+                $this->installDbTables();
+
                 $this->save();
             }
         }
@@ -341,10 +369,10 @@ class ControllerPaymentFactoring extends Controller
 
     /**
      * Generate Invoice Print XML
-     * @param $order_id
+     * @param array $items Order Lines
      * @return mixed
      */
-    protected function getInvoiceExtraPrintBlocksXML($order_id)
+    protected function getInvoiceExtraPrintBlocksXML($items)
     {
         $dom = new DOMDocument('1.0', 'utf-8');
         $OnlineInvoice = $dom->createElement('OnlineInvoice');
@@ -354,28 +382,59 @@ class ControllerPaymentFactoring extends Controller
 
         $OrderLines = $dom->createElement('OrderLines');
         $OnlineInvoice->appendChild($OrderLines);
-
-        $this->load->model('sale/order');
-
-        // Add Totals
-        // Note: At moment Opencart can't provide good content of order
-        $totals = $this->model_sale_order->getOrderTotals($order_id);
-        foreach ($totals as $key => $total)
+        foreach ($items as $id => $item)
         {
-            if ($total['code'] === 'total') {
-                continue;
-            }
-
             $OrderLine = $dom->createElement('OrderLine');
-            $OrderLine->appendChild($dom->createElement('Product', $total['title']));
-            $OrderLine->appendChild($dom->createElement('Qty', 1));
-            $OrderLine->appendChild($dom->createElement('UnitPrice', round($total['value'], 2)));
-            $OrderLine->appendChild($dom->createElement('VatRate', 0));
-            $OrderLine->appendChild($dom->createElement('VatAmount', 0));
-            $OrderLine->appendChild($dom->createElement('Amount', round($total['value'], 2)));
+            $OrderLine->appendChild($dom->createElement('Product', $item['name']));
+            $OrderLine->appendChild($dom->createElement('Qty', $item['qty']));
+            $OrderLine->appendChild($dom->createElement('UnitPrice', $item['unit_price']));
+            $OrderLine->appendChild($dom->createElement('VatRate', $item['vat_rate']));
+            $OrderLine->appendChild($dom->createElement('VatAmount', $item['vat_amount']));
+            $OrderLine->appendChild($dom->createElement('Amount', $item['amount']));
             $OrderLines->appendChild($OrderLine);
         }
 
         return str_replace("\n", '', $dom->saveXML());
+    }
+
+    /**
+     * Get Saved Cart Items
+     * @param $order_id
+     * @return array
+     */
+    protected function load_saved_items($order_id) {
+        $query = sprintf('SELECT * FROM `' . DB_PREFIX . 'payex_factoring_items` WHERE order_id=%d;',
+            $this->db->escape((int)$order_id)
+        );
+        $orders = $this->db->query($query);
+        if ($orders->num_rows === 0) {
+            return array();
+        }
+
+        return $orders->rows;
+    }
+
+    /**
+     * Install Database Tables
+     */
+    public function installDbTables()
+    {
+        $res = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "payex_factoring_items'");
+        if ($res->num_rows === 0) {
+            $this->db->query("
+CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "payex_factoring_items` (
+  `item_id` int(11) NOT NULL AUTO_INCREMENT,
+  `order_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL COMMENT 'Product Name',
+  `qty` int(11) NOT NULL COMMENT 'Qty',
+  `unit_price` float NOT NULL COMMENT 'Unit Price',
+  `vat_rate` float NOT NULL COMMENT 'VAT Rate',
+  `vat_amount` float NOT NULL COMMENT 'VAT Amount',
+  `amount` float NOT NULL COMMENT 'Amount',
+  PRIMARY KEY (`item_id`),
+  KEY `order_id` (`order_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Order lines for PayEx';
+            ");
+        }
     }
 }

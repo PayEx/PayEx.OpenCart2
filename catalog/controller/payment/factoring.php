@@ -224,6 +224,10 @@ class ControllerPaymentFactoring extends Controller
         // Save Transaction
         $this->model_module_factoring->addTransaction($order_id, $result['transactionNumber'], $result['transactionStatus'], $result, isset($result['date']) ? strtotime($result['date']) : time());
 
+        // Save Order Lines for Capture
+        $order_xml = $this->getInvoiceExtraPrintBlocksXML($this->cart->getProducts(), $this->session->data['shipping_method']);
+        $this->save_order_lines($order['order_id'], $order_xml);
+
         $transaction_status = (int)$result['transactionStatus'];
         switch ($transaction_status) {
             case 0:
@@ -371,5 +375,47 @@ class ControllerPaymentFactoring extends Controller
         }
 
         return str_replace("\n", '', $dom->saveXML());
+    }
+
+    /**
+     * Save Order lines in Database
+     * @param int $order_id Order ID
+     * @param string $xml XML content generated using getInvoiceExtraPrintBlocksXML()
+     * @return void
+     */
+    public function save_order_lines($order_id, $xml) {
+        $products = array();
+
+        // Parse order lines
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $dom->loadXML($xml);
+        $order_lines = $dom->getElementsByTagName('OrderLine');
+        foreach ($order_lines as $order_line) {
+            if ($order_line->childNodes->length) {
+                $tmp = array();
+                foreach ($order_line->childNodes as $i) {
+                    $tmp[$i->nodeName] = $i->nodeValue;
+                }
+
+                $products[] = $tmp;
+            }
+        }
+
+        if (count($products) > 0) {
+            // Clean up
+            $this->db->query(sprintf("DELETE FROM " . DB_PREFIX . "payex_factoring_items WHERE order_id = '%s';", (int)$order_id));
+
+            // Insert Order lines to table
+            foreach ($products as $product) {
+                $name = $this->db->escape($product['Product']);
+                $qty = (float) $product['Qty'];
+                $unit_price = (float) $product['UnitPrice'];
+                $vat_rate = (float) $product['VatRate'];
+                $vat_amount = (float) $product['VatAmount'];
+                $amount = (float) $product['Amount'];
+
+                $this->db->query(sprintf("INSERT INTO " . DB_PREFIX . "payex_factoring_items SET order_id = '%s', name = '%s', qty = '%s', unit_price = '%s', vat_rate = '%s', vat_amount='%s', amount='%s';", (int)$order_id, $name, $qty, $unit_price, $vat_rate, $vat_amount, $amount));
+            }
+        }
     }
 }
