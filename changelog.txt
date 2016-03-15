@@ -1,2 +1,5 @@
+Version 1.0.1
+* Improved capture feature of factoring module
+
 Opencart 2 Version 1.0
 First release
