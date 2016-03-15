@@ -165,26 +165,6 @@ class ControllerPaymentFactoring extends Controller
                 );
                 $result = $this->getPx()->PurchaseFinancingInvoice($params);
                 break;
-            case 'FACTORING':
-                // Call PxOrder.PurchaseInvoiceSale
-                $params = array(
-                    'accountNumber' => '',
-                    'orderRef' => $orderRef,
-                    'socialSecurityNumber' => $ssn,
-                    'legalFirstName' => $order['payment_firstname'],
-                    'legalLastName' => $order['payment_lastname'],
-                    'legalStreetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
-                    'legalCoAddress' => '',
-                    'legalPostNumber' => $order['payment_postcode'],
-                    'legalCity' => $order['payment_city'],
-                    'legalCountryCode' => $order['payment_iso_code_2'],
-                    'email' => $order['email'],
-                    'msisdn' => (substr($order['telephone'], 0, 1) === '+') ? $order['telephone'] : '+' . $order['telephone'],
-                    'ipAddress' => $order['ip'],
-                );
-
-                $result = $this->getPx()->PurchaseInvoiceSale($params);
-                break;
             case 'CREDITACCOUNT':
                 // Call PxOrder.PurchaseCreditAccount
                 $params = array(
