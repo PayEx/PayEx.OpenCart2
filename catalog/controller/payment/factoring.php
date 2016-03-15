@@ -132,7 +132,7 @@ class ControllerPaymentFactoring extends Controller
             'additionalValues' => '',
             'externalID' => '',
             'returnUrl' => 'http://localhost.no/return',
-            'view' => $view,
+            'view' => $view === 'CREDITACCOUNT' ? 'FINANCING' : $view,
             'agreementRef' => '',
             'cancelUrl' => 'http://localhost.no/cancel',
             'clientLanguage' => 'en-US'
@@ -152,7 +152,7 @@ class ControllerPaymentFactoring extends Controller
                     'accountNumber' => '',
                     'orderRef' => $orderRef,
                     'socialSecurityNumber' => $ssn,
-                    'legalName' => $order['payment_firstname'] . ' ' . $order['payment_lastname'],
+                    'legalName' => trim($order['payment_firstname'] . ' ' . $order['payment_lastname']),
                     'streetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
                     'coAddress' => '',
                     'zipCode' => $order['payment_postcode'],
@@ -186,24 +186,23 @@ class ControllerPaymentFactoring extends Controller
                 $result = $this->getPx()->PurchaseInvoiceSale($params);
                 break;
             case 'CREDITACCOUNT':
-                // Call PxOrder.PurchasePartPaymentSale
+                // Call PxOrder.PurchaseCreditAccount
                 $params = array(
                     'accountNumber' => '',
                     'orderRef' => $orderRef,
                     'socialSecurityNumber' => $ssn,
-                    'legalFirstName' => $order['payment_firstname'],
-                    'legalLastName' => $order['payment_lastname'],
-                    'legalStreetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
-                    'legalCoAddress' => '',
-                    'legalPostNumber' => $order['payment_postcode'],
-                    'legalCity' => $order['payment_city'],
-                    'legalCountryCode' => $order['payment_iso_code_2'],
+                    'legalName' => trim($order['payment_firstname'] . ' ' . $order['payment_lastname']),
+                    'streetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
+                    'coAddress' => '',
+                    'zipCode' => $order['payment_postcode'],
+                    'city' => $order['payment_city'],
+                    'countryCode' => $order['payment_iso_code_2'],
+                    'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXCREDITACCOUNTSE' : 'PXCREDITACCOUNTNO',
                     'email' => $order['email'],
-                    'msisdn' => (substr($order['telephone'], 0, 1) === '+') ? $order['telephone'] : '+' . $order['telephone'],
-                    'ipAddress' => $order['ip'],
+                    'msisdn' => (mb_substr($order['telephone'], 0, 1) === '+') ? $order['telephone'] : '+' . $order['telephone'],
+                    'ipAddress' => $order['ip']
                 );
-
-                $result = $this->getPx()->PurchasePartPaymentSale($params);
+                $result = $this->getPx()->PurchaseCreditAccount($params);
                 break;
             default:
                 $this->session->data['payex_error'] = 'Invalid payment mode';
