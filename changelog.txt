@@ -1,3 +1,8 @@
+Version 1.0.2
+* Implemented PayEx Delbetala (PartPayment)
+* Updated Px library
+* Removed deprecated code
+
 Version 1.0.1
 * Improved capture feature of factoring module
 
