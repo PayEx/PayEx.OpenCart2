@@ -5,7 +5,7 @@ if (!defined('DIR_APPLICATION')) {
 
 class ModelPaymentBankdebit extends Model
 {
-    protected $_module_version = '1.0.1';
+    protected $_module_version = '1.0.3';
 
     public function __construct($registry) {
         parent::__construct($registry);

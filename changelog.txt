@@ -1,3 +1,6 @@
+Version 1.0.3
+* Implemented Swish payment method
+
 Version 1.0.2
 * Implemented PayEx Delbetala (PartPayment)
 * Updated Px library
@@ -6,5 +9,5 @@ Version 1.0.2
 Version 1.0.1
 * Improved capture feature of factoring module
 
-Opencart 2 Version 1.0
-First release
+Version 1.0
+* First release
