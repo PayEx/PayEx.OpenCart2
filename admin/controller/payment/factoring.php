@@ -131,27 +131,26 @@ class ControllerPaymentFactoring extends Controller
                         // Load saved order items
                         $items = $this->load_saved_items($order_id);
                         if (count($items) === 0) {
-                            $json = array(
-                                'status' => 'error',
-                                'message' => 'No saved items in order'
-                            );
-                            $this->response->setOutput(json_encode($json));
-                            return;
-                        }
+                            // No saved order lines: Use compatible way
+                            $amount = $order['total'];
 
-                        // Calculate order amount
-                        if (function_exists('array_column')) {
-                            $amount = array_sum(array_column($items, 'amount'));
+                            // Generate XML content
+                            $xml = $this->getAdminInvoiceExtraPrintBlocksXML($order_id);
                         } else {
-                            // For older PHP versions (< 5.5.0)
-                            $amount = 0;
-                            foreach ($items as $item) {
-                                $amount += $item['amount'];
+                            // Calculate order amount
+                            if (function_exists('array_column')) {
+                                $amount = array_sum(array_column($items, 'amount'));
+                            } else {
+                                // For older PHP versions (< 5.5.0)
+                                $amount = 0;
+                                foreach ($items as $item) {
+                                    $amount += $item['amount'];
+                                }
                             }
-                        }
 
-                        // Generate XML content
-                        $xml = $this->getInvoiceExtraPrintBlocksXML($items);
+                            // Generate XML content
+                            $xml = $this->getInvoiceExtraPrintBlocksXML($items);
+                        }
 
                         // Call PxOrder.Capture5
                         $params = array(
@@ -436,5 +435,46 @@ CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "payex_factoring_items` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Order lines for PayEx';
             ");
         }
+    }
+
+    /**
+     * Generate Invoice Print XML with OpenCart order lines
+     * @param $order_id
+     * @return mixed
+     */
+    protected function getAdminInvoiceExtraPrintBlocksXML($order_id)
+    {
+        $dom = new DOMDocument('1.0', 'utf-8');
+        $OnlineInvoice = $dom->createElement('OnlineInvoice');
+        $dom->appendChild($OnlineInvoice);
+        $OnlineInvoice->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+        $OnlineInvoice->setAttributeNS('http://www.w3.org/2001/XMLSchema-instance', 'xsd', 'http://www.w3.org/2001/XMLSchema');
+
+        $OrderLines = $dom->createElement('OrderLines');
+        $OnlineInvoice->appendChild($OrderLines);
+
+        $this->load->model('sale/order');
+
+        // Add Totals
+        // Get OpenCart Order totals
+        $totals = $this->model_sale_order->getOrderTotals($order_id);
+        foreach ($totals as $key => $total)
+        {
+            // Ignore grand total value
+            if ($total['code'] === 'total') {
+                continue;
+            }
+
+            $OrderLine = $dom->createElement('OrderLine');
+            $OrderLine->appendChild($dom->createElement('Product', $total['title']));
+            $OrderLine->appendChild($dom->createElement('Qty', 1));
+            $OrderLine->appendChild($dom->createElement('UnitPrice', round($total['value'], 2)));
+            $OrderLine->appendChild($dom->createElement('VatRate', 0));
+            $OrderLine->appendChild($dom->createElement('VatAmount', 0));
+            $OrderLine->appendChild($dom->createElement('Amount', round($total['value'], 2)));
+            $OrderLines->appendChild($OrderLine);
+        }
+
+        return str_replace("\n", '', $dom->saveXML());
     }
 }
