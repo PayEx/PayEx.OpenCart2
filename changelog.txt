@@ -1,3 +1,6 @@
+Version 1.0.4
+* Financing Invoice: add coupon to order lines
+
 Version 1.0.3
 * Implemented Swish payment method
 

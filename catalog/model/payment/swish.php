@@ -5,7 +5,7 @@ if (!defined('DIR_APPLICATION')) {
 
 class ModelPaymentSwish extends Model
 {
-    protected $_module_version = '1.0.3';
+    protected $_module_version = '1.0.4';
 
     public function __construct($registry) {
         parent::__construct($registry);
