@@ -204,7 +204,7 @@ class ControllerPaymentFactoring extends Controller
         $this->model_module_factoring->addTransaction($order_id, $result['transactionNumber'], $result['transactionStatus'], $result, isset($result['date']) ? strtotime($result['date']) : time());
 
         // Save Order Lines for Capture
-        $order_xml = $this->getInvoiceExtraPrintBlocksXML($this->cart->getProducts(), $this->session->data['shipping_method']);
+        $order_xml = $this->getInvoiceExtraPrintBlocksXML($order['order_id'], $this->cart->getProducts(), $this->session->data['shipping_method']);
         $this->save_order_lines($order['order_id'], $order_xml);
 
         $transaction_status = (int)$result['transactionStatus'];
@@ -286,11 +286,12 @@ class ControllerPaymentFactoring extends Controller
 
     /**
      * Generate Invoice Print XML
+     * @param $order_id
      * @param $products
      * @param $shipping_method
      * @return mixed
      */
-    protected function getInvoiceExtraPrintBlocksXML($products, $shipping_method)
+    protected function getInvoiceExtraPrintBlocksXML($order_id, $products, $shipping_method)
     {
         $dom = new DOMDocument('1.0', 'utf-8');
         $OnlineInvoice = $dom->createElement('OnlineInvoice');
@@ -332,6 +333,23 @@ class ControllerPaymentFactoring extends Controller
             $OrderLine->appendChild($dom->createElement('VatRate', $shippingTaxPercent));
             $OrderLine->appendChild($dom->createElement('VatAmount', $shippingTax));
             $OrderLine->appendChild($dom->createElement('Amount', $shipping + $shippingTax));
+            $OrderLines->appendChild($OrderLine);
+        }
+
+        // Add Coupon Line
+        $order_info = $this->model_checkout_order->getOrder($order_id);
+        $order_total_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "order_total` WHERE code = 'coupon'  AND order_id = '" . (int)$order_id . "' ORDER BY sort_order ASC");
+        if ($order_total_query && $order_total_query->rows > 0) {
+            $coupon = array_shift($order_total_query->rows);
+            $coupon['value'] = $this->currency->format($coupon['value'], $order_info['currency_code'], $order_info['currency_value'], false);
+
+            $OrderLine = $dom->createElement('OrderLine');
+            $OrderLine->appendChild($dom->createElement('Product', $coupon['title']));
+            $OrderLine->appendChild($dom->createElement('Qty', 1));
+            $OrderLine->appendChild($dom->createElement('UnitPrice', $coupon['value']));
+            $OrderLine->appendChild($dom->createElement('VatRate', 0));
+            $OrderLine->appendChild($dom->createElement('VatAmount', 0));
+            $OrderLine->appendChild($dom->createElement('Amount', $coupon['value']));
             $OrderLines->appendChild($OrderLine);
         }
 
