@@ -343,14 +343,16 @@ class ControllerPaymentFactoring extends Controller
             $coupon = array_shift($order_total_query->rows);
             $coupon['value'] = $this->currency->format($coupon['value'], $order_info['currency_code'], $order_info['currency_value'], false);
 
-            $OrderLine = $dom->createElement('OrderLine');
-            $OrderLine->appendChild($dom->createElement('Product', $coupon['title']));
-            $OrderLine->appendChild($dom->createElement('Qty', 1));
-            $OrderLine->appendChild($dom->createElement('UnitPrice', $coupon['value']));
-            $OrderLine->appendChild($dom->createElement('VatRate', 0));
-            $OrderLine->appendChild($dom->createElement('VatAmount', 0));
-            $OrderLine->appendChild($dom->createElement('Amount', $coupon['value']));
-            $OrderLines->appendChild($OrderLine);
+            if (abs($coupon['value']) > 0) {
+                $OrderLine = $dom->createElement('OrderLine');
+                $OrderLine->appendChild($dom->createElement('Product', $coupon['title']));
+                $OrderLine->appendChild($dom->createElement('Qty', 1));
+                $OrderLine->appendChild($dom->createElement('UnitPrice', $coupon['value']));
+                $OrderLine->appendChild($dom->createElement('VatRate', 0));
+                $OrderLine->appendChild($dom->createElement('VatAmount', 0));
+                $OrderLine->appendChild($dom->createElement('Amount', $coupon['value']));
+                $OrderLines->appendChild($OrderLine);
+            }
         }
 
         // Add Factoring fee
