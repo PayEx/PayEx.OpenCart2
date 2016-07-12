@@ -11,3 +11,4 @@ $_['text_select_payment_method'] = 'Please select payment method:';
 $_['text_financing_invoice'] = 'Financing Invoice';
 $_['text_factoring'] = 'Invoice 2.0 (Factoring)';
 $_['text_part_payment'] = 'Part Payment';
+$_['text_factoring_fee'] = 'Factoring Fee';

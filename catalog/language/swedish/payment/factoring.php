@@ -11,3 +11,4 @@ $_['text_select_payment_method'] = 'Var god och välj betalningssätt:';
 $_['text_financing_invoice'] = 'Financing Invoice';
 $_['text_factoring'] = 'Faktura';
 $_['text_part_payment'] = 'Delbetalning';
+$_['text_factoring_fee'] = 'Factoring Fee';
