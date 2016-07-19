@@ -302,12 +302,14 @@ class ControllerPaymentFactoring extends Controller
         $OrderLines = $dom->createElement('OrderLines');
         $OnlineInvoice->appendChild($OrderLines);
 
+        $averageTax = array();
         foreach ($products as $key => $product) {
             $qty = $product['quantity'];
             $price = $product['price'] * $qty;
             $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
             $taxPrice = $priceWithTax - $price;
             $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
+            $averageTax[] = $taxPercent;
 
             $OrderLine = $dom->createElement('OrderLine');
             $OrderLine->appendChild($dom->createElement('Product', $product['name']));
@@ -325,6 +327,7 @@ class ControllerPaymentFactoring extends Controller
             $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
             $shippingTax = $shippingWithTax - $shipping;
             $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
+            $averageTax[] = $shippingTaxPercent;
 
             $OrderLine = $dom->createElement('OrderLine');
             $OrderLine->appendChild($dom->createElement('Product', $shipping_method['title']));
@@ -332,7 +335,7 @@ class ControllerPaymentFactoring extends Controller
             $OrderLine->appendChild($dom->createElement('UnitPrice', $shipping));
             $OrderLine->appendChild($dom->createElement('VatRate', $shippingTaxPercent));
             $OrderLine->appendChild($dom->createElement('VatAmount', $shippingTax));
-            $OrderLine->appendChild($dom->createElement('Amount', $shipping + $shippingTax));
+            $OrderLine->appendChild($dom->createElement('Amount', $shippingWithTax));
             $OrderLines->appendChild($OrderLine);
         }
 
@@ -344,13 +347,18 @@ class ControllerPaymentFactoring extends Controller
             $coupon['value'] = $this->currency->format($coupon['value'], $order_info['currency_code'], $order_info['currency_value'], false);
 
             if (abs($coupon['value']) > 0) {
+                // Use average tax as discount tax for workaround
+                $couponTaxPercent = round(array_sum($averageTax) / count($averageTax));
+                $couponTax = round($coupon['value'] / 100 * $couponTaxPercent, 2);
+                $couponWithTax = $coupon['value'] + $couponTax;
+
                 $OrderLine = $dom->createElement('OrderLine');
                 $OrderLine->appendChild($dom->createElement('Product', $coupon['title']));
                 $OrderLine->appendChild($dom->createElement('Qty', 1));
                 $OrderLine->appendChild($dom->createElement('UnitPrice', $coupon['value']));
-                $OrderLine->appendChild($dom->createElement('VatRate', 0));
-                $OrderLine->appendChild($dom->createElement('VatAmount', 0));
-                $OrderLine->appendChild($dom->createElement('Amount', $coupon['value']));
+                $OrderLine->appendChild($dom->createElement('VatRate', $couponTaxPercent));
+                $OrderLine->appendChild($dom->createElement('VatAmount', $couponTax));
+                $OrderLine->appendChild($dom->createElement('Amount', $couponWithTax));
                 $OrderLines->appendChild($OrderLine);
             }
         }
