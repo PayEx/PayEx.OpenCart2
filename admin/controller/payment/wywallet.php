@@ -3,7 +3,8 @@ if (!defined('DIR_APPLICATION')) {
     die();
 }
 
-require_once DIR_SYSTEM . 'library/Px/Px.php';
+require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
+require_once DIR_SYSTEM . 'Payex/Payex.php';
 
 class ControllerPaymentWywallet extends Controller
 {
@@ -338,7 +339,7 @@ $this->response->setOutput($this->load->view('payment/wywallet.tpl', $data));
 
     /**
      * Get PayEx Handler
-     * @return Px
+     * @return \PayEx\Px
      */
     protected function getPx()
     {
@@ -346,8 +347,14 @@ $this->response->setOutput($this->load->view('payment/wywallet.tpl', $data));
             $account_number = $this->config->get('wywallet_account_number');
             $encryption_key = $this->config->get('wywallet_encryption_key');
             $mode = $this->config->get('wywallet_mode');
-            self::$_px = new Px();
+            self::$_px = new \PayEx\Px();
             self::$_px->setEnvironment($account_number, $encryption_key, ($mode !== 'LIVE'));
+            self::$_px->setUserAgent(sprintf("PayEx.Ecommerce.Php/%s PHP/%s OpenCart/%s PayEx.OpenCart/%s",
+                \PayEx\Px::VERSION,
+                phpversion(),
+                VERSION,
+                Payex::getVersion()
+            ));
         }
 
         return self::$_px;

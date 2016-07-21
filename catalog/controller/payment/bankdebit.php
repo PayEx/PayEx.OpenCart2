@@ -2,7 +2,8 @@
 if (!defined('DIR_APPLICATION')) {
     die();
 }
-require_once DIR_SYSTEM . 'library/Px/Px.php';
+require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
+require_once DIR_SYSTEM . 'Payex/Payex.php';
 
 class ControllerPaymentBankdebit extends Controller
 {
@@ -355,16 +356,22 @@ class ControllerPaymentBankdebit extends Controller
 
     /**
      * Get PayEx Handler
-     * @return Px
+     * @return \PayEx\Px
      */
     protected function getPx()
     {
         if (is_null(self::$_px)) {
-            $account_number = $this->config->get('payex_account_number');
-            $encryption_key = $this->config->get('payex_encryption_key');
-            $mode = $this->config->get('payex_mode');
-            self::$_px = new Px();
+            $account_number = $this->config->get('bankdebit_account_number');
+            $encryption_key = $this->config->get('bankdebit_encryption_key');
+            $mode = $this->config->get('bankdebit_mode');
+            self::$_px = new \PayEx\Px();
             self::$_px->setEnvironment($account_number, $encryption_key, ($mode !== 'LIVE'));
+            self::$_px->setUserAgent(sprintf("PayEx.Ecommerce.Php/%s PHP/%s OpenCart/%s PayEx.OpenCart/%s",
+                \PayEx\Px::VERSION,
+                phpversion(),
+                VERSION,
+                Payex::getVersion()
+            ));
         }
 
         return self::$_px;
