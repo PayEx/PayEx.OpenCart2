@@ -329,7 +329,7 @@ class ControllerPaymentFactoring extends Controller
         }
 
         // Add Shipping Line
-        if (isset($shipping_method['cost'])) {
+        if (isset($shipping_method['cost']) && (float)$shipping_method['cost'] > 0) {
             $shipping = $shipping_method['cost'];
             $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
             $shippingTax = $shippingWithTax - $shipping;
