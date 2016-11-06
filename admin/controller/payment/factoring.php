@@ -5,6 +5,7 @@ if (!defined('DIR_APPLICATION')) {
 
 require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
+require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
 class ControllerPaymentFactoring extends Controller
 {
@@ -75,7 +76,7 @@ class ControllerPaymentFactoring extends Controller
      */
     function index()
     {
-        $this->load->language('payment/' . $this->_module_name);
+        $this->load->language( OcRoute::getPaymentRoute('payment/') . $this->_module_name);
         $this->load->model('setting/setting');
 
         // Install DB Tables
@@ -106,11 +107,12 @@ class ControllerPaymentFactoring extends Controller
         $this->load->model('localisation/geo_zone');
         $data['geo_zones'] = $this->model_localisation_geo_zone->getGeoZones();
 
-        $data['action'] = $this->url->link('payment/' . $this->_module_name, 'token=' . $this->session->data['token'], 'SSL');
-        $data['cancel'] = $this->url->link('extension/payment', 'token=' . $this->session->data['token'], 'SSL');
+        $data['action'] = $this->url->link( OcRoute::getPaymentRoute('payment/') . $this->_module_name, 'token=' . $this->session->data['token'], 'SSL');
+        $data['cancel'] = $this->url->link(OcRoute::getExtension(), 'token=' . $this->session->data['token'], 'SSL');
         $data['error'] = $this->error;
 
         if (($this->request->server['REQUEST_METHOD'] === 'POST')) {
+			
             if (isset($this->request->post['action'])) {
                 $this->load->model('sale/order');
 
@@ -283,12 +285,12 @@ class ControllerPaymentFactoring extends Controller
         );
         $data['breadcrumbs'][] = array(
             'text' => $this->language->get('text_payment'),
-            'href' => $this->url->link('extension/payment', 'token=' . $this->session->data['token'], 'SSL'),
+            'href' => $this->url->link(OcRoute::getExtension(), 'token=' . $this->session->data['token'], 'SSL'),
             'separator' => ' :: '
         );
         $data['breadcrumbs'][] = array(
             'text' => $this->language->get('heading_title'),
-            'href' => $this->url->link('payment/' . $this->_module_name, 'token=' . $this->session->data['token'], 'SSL'),
+            'href' => $this->url->link(OcRoute::getPaymentRoute('payment/') . $this->_module_name, 'token=' . $this->session->data['token'], 'SSL'),
             'separator' => ' :: '
         );
 
@@ -317,7 +319,7 @@ class ControllerPaymentFactoring extends Controller
      */
     private function validate()
     {
-        if (!$this->user->hasPermission('modify', 'payment/' . $this->_module_name)) {
+        if (!$this->user->hasPermission('modify', OcRoute::getPaymentRoute('payment/') . $this->_module_name)) {
             $this->error['warning'] = $this->language->get('error_permission');
         }
 
@@ -347,7 +349,7 @@ class ControllerPaymentFactoring extends Controller
         $this->model_setting_setting->editSetting($this->_module_name, $data);
 
         $this->session->data['success'] = $this->language->get('text_success');
-        $this->response->redirect($this->url->link('extension/payment', 'token=' . $this->session->data['token'], 'SSL'));
+        $this->response->redirect($this->url->link(OcRoute::getExtension(), 'token=' . $this->session->data['token'], 'SSL'));
     }
 
     /**

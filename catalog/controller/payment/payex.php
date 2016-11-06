@@ -4,6 +4,7 @@ if (!defined('DIR_APPLICATION')) {
 }
 require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
+require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
 class ControllerPaymentPayex extends Controller
 {
@@ -22,18 +23,18 @@ class ControllerPaymentPayex extends Controller
      */
    public function index()
     {
-        $this->language->load('payment/payex');
+        $this->language->load( OcRoute::getPaymentRoute('payment/') . 'payex');
 
         $data['text_title'] = $this->language->get('text_title');
         $data['text_description'] = $this->language->get('text_description');
         $data['button_confirm'] = $this->language->get('button_confirm');
         $data['continue'] = $this->url->link('checkout/success');
-        $data['action'] = $this->url->link('payment/' . $this->_module_name . '/confirm');
+        $data['action'] = $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/confirm');
 
         if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/payex.tpl')) {
             return $this->load->view($this->config->get('config_template') . '/template/payment/payex.tpl', $data);
         } else {
-           return $this->load->view('default/template/payment/payex.tpl', $data);
+           return $this->load->view(OcRoute::getTemplate('payment/payex.tpl'), $data);
         }
     }
 
@@ -42,14 +43,14 @@ class ControllerPaymentPayex extends Controller
      */
     public function confirm()
     {
-        $this->language->load('payment/payex_error');
+        $this->language->load( OcRoute::getPaymentRoute('payment/') . 'payex_error');
         $this->load->model('checkout/order');
         $this->load->model('module/payex');
 
         $order_id = $this->session->data['order_id'];
         if (empty($order_id)) {
             $this->session->data['payex_error'] = $this->language->get('error_invalid_order');
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         $order = $this->model_checkout_order->getOrder($order_id);
@@ -81,16 +82,16 @@ class ControllerPaymentPayex extends Controller
             'clientIdentifier' => 'USERAGENT=' . $order['user_agent'],
             'additionalValues' => $additional,
             'externalID' => '',
-            'returnUrl' => $this->url->link('payment/' . $this->_module_name . '/success', '', 'SSL'),
+            'returnUrl' => $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/success', '', 'SSL'),
             'view' => $this->config->get('payex_paymentview'),
             'agreementRef' => '',
-            'cancelUrl' => $this->url->link('payment/' . $this->_module_name . '/cancel', '', 'SSL'),
+            'cancelUrl' => $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/cancel', '', 'SSL'),
             'clientLanguage' => $this->getLocale($this->language->get('code'))
         );
         $result = $this->getPx()->Initialize8($params);
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
             $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
         $redirectUrl = $result['redirectUrl'];
         $orderRef = $result['orderRef'];
@@ -123,7 +124,7 @@ class ControllerPaymentPayex extends Controller
                 $result = $this->getPx()->AddSingleOrderLine2($params);
                 if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
                     $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                    $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                    $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
                 }
 
                 $i++;
@@ -155,7 +156,7 @@ class ControllerPaymentPayex extends Controller
                 $result = $this->getPx()->AddSingleOrderLine2($params);
                 if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
                     $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                    $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                    $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
                 }
 
                 $i++;
@@ -232,20 +233,20 @@ class ControllerPaymentPayex extends Controller
      */
     public function success()
     {
-        $this->load->language('payment/payex_error');
+        $this->load->language( OcRoute::getPaymentRoute('payment/') . 'payex_error');
         $this->load->model('checkout/order');
         $this->load->model('module/payex');
 
         $order_id = $this->session->data['order_id'];
         if (empty($order_id)) {
             $this->session->data['payex_error'] = $this->language->get('error_invalid_order');
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         $orderRef = $this->request->get['orderRef'];
         if (empty($orderRef)) {
             $this->session->data['payex_error'] = $this->language->get('error_invalid_order_reference');
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         // Call PxOrder.Complete
@@ -261,7 +262,7 @@ class ControllerPaymentPayex extends Controller
             }
 
             $this->session->data['payex_error'] = $message;
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         if (!isset($result['transactionNumber'])) {
@@ -305,7 +306,7 @@ class ControllerPaymentPayex extends Controller
 
                 $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_failed_status_id'), $message, true);
                 $this->session->data['payex_error'] = $this->language->get('error_payment_declined');
-                $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
     }
 
@@ -322,7 +323,7 @@ class ControllerPaymentPayex extends Controller
      */
     public function error()
     {
-        $this->load->language('payment/payex_error');
+        $this->load->language( OcRoute::getPaymentRoute('payment/') . 'payex_error');
 
         $data['heading_title'] = $this->language->get('heading_title');
         if (!empty($this->session->data['payex_error'])) {
@@ -342,7 +343,7 @@ class ControllerPaymentPayex extends Controller
 	    if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/payex_error.tpl')) {
 		    $this->response->setOutput($this->load->view($this->config->get('config_template') . '/template/payment/payex_error.tpl', $data));
 	    } else {
-		    $this->response->setOutput($this->load->view('default/template/payment/payex_error.tpl', $data));
+		    $this->response->setOutput($this->load->view(OcRoute::getTemplate('payment/') . 'payex_error.tpl', $data));
 	    }
     }
 

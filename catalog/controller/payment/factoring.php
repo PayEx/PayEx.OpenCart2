@@ -4,6 +4,7 @@ if (!defined('DIR_APPLICATION')) {
 }
 require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
+require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
 class ControllerPaymentFactoring extends Controller
 {
@@ -17,7 +18,7 @@ class ControllerPaymentFactoring extends Controller
     public function index()
     {
 
-        $this->language->load('payment/factoring');
+        $this->language->load( OcRoute::getPaymentRoute('payment/') . 'factoring');
 
         $data['text_title'] = $this->language->get('text_title');
         $data['text_description'] = $this->language->get('text_description');
@@ -28,13 +29,13 @@ class ControllerPaymentFactoring extends Controller
         $data['text_part_payment'] = $this->language->get('text_part_payment');
         $data['button_confirm'] = $this->language->get('button_confirm');
         $data['continue'] = $this->url->link('checkout/success');
-        $data['action'] = $this->url->link('payment/factoring/validate');
+        $data['action'] = $this->url->link( OcRoute::getPaymentRoute('payment/') . 'factoring/validate');
         $data['type'] = $this->config->get('factoring_type');
 
         if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/factoring.tpl')) {
             return $this->load->view($this->config->get('config_template') . '/template/payment/factoring.tpl', $data);
         } else {
-	        return $this->load->view('default/template/payment/factoring.tpl', $data);
+	        return $this->load->view( OcRoute::getTemplate('payment/') . 'factoring.tpl', $data);
         }
     }
 
@@ -44,8 +45,8 @@ class ControllerPaymentFactoring extends Controller
     public function validate()
     {
         $this->load->model('checkout/order');
-        $this->load->language('payment/factoring');
-        $this->load->language('payment/payex_error');
+        $this->load->language( OcRoute::getPaymentRoute('payment/') . 'factoring');
+        $this->load->language( OcRoute::getPaymentRoute('payment/') . 'payex_error');
 
         $order_id = $this->session->data['order_id'];
         $ssn = $this->request->post['social-security-number'];
@@ -82,7 +83,7 @@ class ControllerPaymentFactoring extends Controller
 
         $json = array(
             'status' => 'ok',
-            'redirect' => $this->url->link('payment/factoring/confirm'),
+            'redirect' => $this->url->link( OcRoute::getPaymentRoute('payment/') . 'factoring/confirm'),
         );
         $this->response->setOutput(json_encode($json));
         return;
@@ -93,20 +94,20 @@ class ControllerPaymentFactoring extends Controller
      */
     public function confirm()
     {
-        $this->language->load('payment/payex_error');
+        $this->language->load( OcRoute::getPaymentRoute('payment/') . 'payex_error');
         $this->load->model('checkout/order');
         $this->load->model('module/factoring');
 
         $order_id = $this->session->data['order_id'];
         if (empty($order_id)) {
             $this->session->data['payex_error'] = $this->language->get('error_invalid_order');
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         $ssn = $this->request->post['social-security-number'];
         if (empty($ssn)) {
             $this->session->data['payex_error'] = $this->language->get('error_invalid_ssn');
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         // Selected Payment Mode
@@ -141,7 +142,7 @@ class ControllerPaymentFactoring extends Controller
         $result = $this->getPx()->Initialize8($params);
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
             $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
         $orderRef = $result['orderRef'];
 
@@ -187,7 +188,7 @@ class ControllerPaymentFactoring extends Controller
                 break;
             default:
                 $this->session->data['payex_error'] = 'Invalid payment mode';
-                $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK') {
             $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
@@ -198,7 +199,7 @@ class ControllerPaymentFactoring extends Controller
 				$this->session->data['payex_error'] = $this->language->get('error_creditCheckNotApproved');
 			}
 
-            $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+            $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
         // Save Transaction
@@ -235,7 +236,7 @@ class ControllerPaymentFactoring extends Controller
                 }
 
                 $this->session->data['payex_error'] = $error_message;
-                $this->response->redirect($this->url->link('payment/' . $this->_module_name . '/error', '', 'SSL'));
+                $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
     }
 
@@ -244,7 +245,7 @@ class ControllerPaymentFactoring extends Controller
      */
     public function error()
     {
-        $this->load->language('payment/payex_error');
+        $this->load->language( OcRoute::getPaymentRoute('payment/') . 'payex_error');
 
         $data['heading_title'] = $this->language->get('heading_title');
         if (!empty($this->session->data['payex_error'])) {
@@ -264,7 +265,7 @@ class ControllerPaymentFactoring extends Controller
         if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/payex_error.tpl')) {
 	        $this->response->setOutput($this->load->view($this->config->get('config_template') . '/template/payment/payex_error.tpl', $data));
         } else {
-	        $this->response->setOutput($this->load->view('default/template/payment/payex_error.tpl', $data));
+	        $this->response->setOutput($this->load->view(OcRoute::getTemplate('payment/') . 'payex_error.tpl', $data));
         }
     }
 

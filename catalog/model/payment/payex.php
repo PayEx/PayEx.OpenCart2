@@ -59,7 +59,13 @@ class ModelPaymentPayex extends Model
 
         // See http://pim.payex.com/Section3/currencycodes.htm
         $allowedCurrencies = array('DKK', 'EUR', 'GBP', 'NOK', 'SEK', 'USD');
-        if (!in_array(strtoupper($this->currency->getCode()), $allowedCurrencies)) {
+		if(empty($this->session->data['currency'])){
+			$code = $this->currency->getCode();			
+		}else{
+			$code = $this->session->data['currency'];
+		}
+
+        if (!in_array(strtoupper($code), $allowedCurrencies)) {
             $status = false;
         }
 
