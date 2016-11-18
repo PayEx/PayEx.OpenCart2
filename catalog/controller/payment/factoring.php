@@ -49,33 +49,31 @@ class ControllerPaymentFactoring extends Controller
         $this->load->language( OcRoute::getPaymentRoute('payment/') . 'payex_error');
 
         $order_id = $this->session->data['order_id'];
-        $ssn = $this->request->post['social-security-number'];
-
+        $ssn = trim($this->request->post['social-security-number']);
         $order = $this->model_checkout_order->getOrder($order_id);
 
-        // Call PxOrder.GetAddressByPaymentMethod
-        $params = array(
-            'accountNumber' => '',
-            'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXFINANCINGINVOICESE' : 'PXFINANCINGINVOICENO',
-            'ssn' => $ssn,
-            'zipcode' => $order['payment_postcode'],
-            'countryCode' => $order['payment_iso_code_2'],
-            'ipAddress' => $order['ip']
-        );
-        $result = $this->getPx()->GetAddressByPaymentMethod($params);
-        if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-            if (preg_match('/\bInvalid parameter:SocialSecurityNumber\b/i', $result['description'])) {
-                $json = array(
-                    'status' => 'error',
-                    'message' => $this->language->get('error_invalid_ssn')
-                );
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
-
+        if (empty($ssn)) {
             $json = array(
                 'status' => 'error',
-                'message' => $result['errorCode'] . ' (' . $result['description'] . ')'
+                'message' => $this->language->get('error_invalid_ssn')
+            );
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
+
+        if (!in_array(mb_strtoupper($order['payment_iso_code_2'], 'UTF-8'), array('SE', 'NO', 'FI'))) {
+            $json = array(
+                'status' => 'error',
+                'message' => 'This country is not supported by the payment system.'
+            );
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
+
+        if (empty($order['payment_postcode'])) {
+            $json = array(
+                'status' => 'error',
+                'message' => 'Please fill Zip Code'
             );
             $this->response->setOutput(json_encode($json));
             return;
