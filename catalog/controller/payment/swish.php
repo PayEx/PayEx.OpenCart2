@@ -54,6 +54,7 @@ class ControllerPaymentSwish extends Controller
         }
 
         $order = $this->model_checkout_order->getOrder($order_id);
+        $amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
 
         $additional = '';
         if ($this->config->get('swish_responsive')) {
@@ -64,7 +65,7 @@ class ControllerPaymentSwish extends Controller
         $params = array(
             'accountNumber' => '',
             'purchaseOperation' => 'SALE',
-            'price' => round($order['total'] * 100),
+            'price' => round($amount * 100),
             'priceArgList' => '',
             'currency' => strtoupper($order['currency_code']),
             'vat' => 0,

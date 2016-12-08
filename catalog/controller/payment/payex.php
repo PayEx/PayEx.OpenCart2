@@ -67,11 +67,13 @@ class ControllerPaymentPayex extends Controller
             }
         }
 
+        $amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+
         // Call PxOrder.Initialize8
         $params = array(
             'accountNumber' => '',
             'purchaseOperation' => $this->config->get('payex_transactiontype'),
-            'price' => round($order['total'] * 100),
+            'price' => round($amount * 100),
             'priceArgList' => '',
             'currency' => strtoupper($order['currency_code']),
             'vat' => 0,

@@ -72,13 +72,14 @@ class ControllerPaymentBankdebit extends Controller
         }
 
         $order = $this->model_checkout_order->getOrder($order_id);
+        $amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
 	
         // Call PxOrder.Initialize8
         $params = array(
             'accountNumber' => '',
             'purchaseOperation' => 'SALE',
             'price' => 0,
-            'priceArgList' => $bank_id . '=' . round($order['total'] * 100),
+            'priceArgList' => $bank_id . '=' . round($amount * 100),
             'currency' => strtoupper($order['currency_code']),
             'vat' => 0,
             'orderID' => $order['order_id'],

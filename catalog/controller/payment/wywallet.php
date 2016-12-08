@@ -62,12 +62,14 @@ class ControllerPaymentWywallet extends Controller
             $additional .= $separator . 'USECSS=RESPONSIVEDESIGN';
         }
 
+        $amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+
         // Call PxOrder.Initialize8
         $params = array(
             'accountNumber' => '',
             'purchaseOperation' => $this->config->get('wywallet_transactiontype'),
             'price' => 0,
-            'priceArgList' => 'WYWALLET=' . round($order['total'] * 100),
+            'priceArgList' => 'WYWALLET=' . round($amount * 100),
             'currency' => strtoupper($order['currency_code']),
             'vat' => 0,
             'orderID' => $order['order_id'],
