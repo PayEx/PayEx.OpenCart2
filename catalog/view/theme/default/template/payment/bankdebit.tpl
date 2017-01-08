@@ -16,6 +16,7 @@
 <script type="text/javascript">
     <!--
     $('#button-confirm').bind('click', function () {
+		$(this).prop('disabled', true);
         $('#form').submit();
     });
     //-->
