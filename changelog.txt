@@ -1,3 +1,8 @@
+Version 1.1.1
+* Prevent to multiple clicks of order button
+* Fixed wrong order amount when multiple currency
+* Don't use GetAddressByPaymentMethod for Financing Invoice
+
 Version 1.1
 * Support for OC 2.3
 

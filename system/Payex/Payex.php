@@ -11,6 +11,6 @@ class Payex
      */
     public static function getVersion()
     {
-        return '1.0.5';
+        return '1.1.1';
     }
 }
