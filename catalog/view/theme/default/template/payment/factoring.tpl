@@ -21,6 +21,7 @@
 <script type="text/javascript">
     <!--
     $('#button-confirm').bind('click', function () {
+		$(this).prop('disabled', true);
         $.ajax({
             url: '<?php echo html_entity_decode($action, ENT_QUOTES, 'UTF-8'); ?>',
             type: 'POST',
@@ -30,8 +31,12 @@
             data: {
                 'social-security-number': $('#social-security-number').val()
             },
+			error:function(){
+				$('#button-confirm').prop('disabled',false);
+			},
             success: function (response) {
-                if (response.status !== 'ok') {
+				$('#button-confirm').prop('disabled',false);
+				if (response.status !== 'ok') {
                     if ($('#payex-error').is('*')) {
                         $('#payex-error').html(response.message);
                     } else {
