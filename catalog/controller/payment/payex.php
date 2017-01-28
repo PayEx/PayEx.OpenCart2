@@ -67,7 +67,21 @@ class ControllerPaymentPayex extends Controller
             }
         }
 
-        $amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+        //$amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+
+	    // Get products of order
+	    $items = $this->model_module_payex->getProductItems($order_id, $this->cart->getProducts(), $this->session->data['shipping_method']);
+
+	    // Calculate order amount
+	    if (function_exists('array_column')) {
+		    $amount = array_sum(array_column($items, 'price_with_tax'));
+	    } else {
+		    // For older PHP versions (< 5.5.0)
+		    $amount = 0;
+		    foreach ($items as $item) {
+			    $amount += $item['price_with_tax'];
+		    }
+	    }
 
         // Call PxOrder.Initialize8
         $params = array(
@@ -101,59 +115,21 @@ class ControllerPaymentPayex extends Controller
         if ($this->config->get('payex_checkout_info')) {
             // add Order Lines
             $i = 1;
-            foreach ($this->cart->getProducts() as $product) {
-                $qty = $product['quantity'];
-                $price = $this->currency->format($product['price'] * $qty, $order['currency_code'], $order['currency_value'], false);
-                $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
-                $taxPrice = $priceWithTax - $price;
-                $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
-
+            foreach ($items as $item) {
                 // Call PxOrder.AddSingleOrderLine2
                 $params = array(
                     'accountNumber' => '',
                     'orderRef' => $orderRef,
                     'itemNumber' => $i,
-                    'itemDescription1' => $product['name'],
+                    'itemDescription1' => $item['name'],
                     'itemDescription2' => '',
                     'itemDescription3' => '',
                     'itemDescription4' => '',
                     'itemDescription5' => '',
-                    'quantity' => $qty,
-                    'amount' => (int)(100 * $priceWithTax), //must include tax
-                    'vatPrice' => (int)(100 * round($taxPrice, 2)),
-                    'vatPercent' => (int)(100 * $taxPercent)
-                );
-                $result = $this->getPx()->AddSingleOrderLine2($params);
-                if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-                    $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                    $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
-                }
-
-                $i++;
-            }
-
-            // Add Shipping Line
-            $shipping_method = $this->session->data['shipping_method'];
-            if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
-                $shipping = $this->currency->format($shipping_method['cost'], $order['currency_code'], $order['currency_value'], false);
-                $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
-                $shippingTax = $shippingWithTax - $shipping;
-                $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
-
-                // Call PxOrder.AddSingleOrderLine2
-                $params = array(
-                    'accountNumber' => '',
-                    'orderRef' => $orderRef,
-                    'itemNumber' => $i,
-                    'itemDescription1' => $shipping_method['title'],
-                    'itemDescription2' => '',
-                    'itemDescription3' => '',
-                    'itemDescription4' => '',
-                    'itemDescription5' => '',
-                    'quantity' => 1,
-                    'amount' => (int)(100 * $shippingWithTax), //must include tax
-                    'vatPrice' => (int)(100 * round($shippingTax, 2)),
-                    'vatPercent' => (int)(100 * $shippingTaxPercent)
+                    'quantity' => $item['qty'],
+                    'amount' => (int)(100 * $item['price_with_tax']), //must include tax
+                    'vatPrice' => (int)(100 * round($item['tax_price'], 2)),
+                    'vatPercent' => (int)(100 * $item['tax_percent'])
                 );
                 $result = $this->getPx()->AddSingleOrderLine2($params);
                 if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {

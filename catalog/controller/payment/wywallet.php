@@ -46,6 +46,7 @@ class ControllerPaymentWywallet extends Controller
     {
         $this->language->load( OcRoute::getPaymentRoute('payment/') . 'payex_error');
         $this->load->model('checkout/order');
+	    $this->load->model('module/payex');
         $this->load->model('module/wywallet');
 
         $order_id = $this->session->data['order_id'];
@@ -62,7 +63,10 @@ class ControllerPaymentWywallet extends Controller
             $additional .= $separator . 'USECSS=RESPONSIVEDESIGN';
         }
 
-        $amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+        //$amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+
+	    // Get products of order
+	    $items = $this->model_module_payex->getProductItems($order_id, $this->cart->getProducts(), $this->session->data['shipping_method']);
 
         // Call PxOrder.Initialize8
         $params = array(
@@ -94,70 +98,32 @@ class ControllerPaymentWywallet extends Controller
         $orderRef = $result['orderRef'];
 
         if ($this->config->get('wywallet_checkout_info')) {
-            // add Order Lines
-            $i = 1;
-            foreach ($this->cart->getProducts() as $product) {
-                $qty = $product['quantity'];
-                $price = $product['price'] * $qty;
-                $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
-                $taxPrice = $priceWithTax - $price;
-                $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
+	        // add Order Lines
+	        $i = 1;
+	        foreach ($items as $item) {
+		        // Call PxOrder.AddSingleOrderLine2
+		        $params = array(
+			        'accountNumber' => '',
+			        'orderRef' => $orderRef,
+			        'itemNumber' => $i,
+			        'itemDescription1' => $item['name'],
+			        'itemDescription2' => '',
+			        'itemDescription3' => '',
+			        'itemDescription4' => '',
+			        'itemDescription5' => '',
+			        'quantity' => $item['qty'],
+			        'amount' => (int)(100 * $item['price_with_tax']), //must include tax
+			        'vatPrice' => (int)(100 * round($item['tax_price'], 2)),
+			        'vatPercent' => (int)(100 * $item['tax_percent'])
+		        );
+		        $result = $this->getPx()->AddSingleOrderLine2($params);
+		        if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
+			        $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
+			        $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
+		        }
 
-                // Call PxOrder.AddSingleOrderLine2
-                $params = array(
-                    'accountNumber' => '',
-                    'orderRef' => $orderRef,
-                    'itemNumber' => $i,
-                    'itemDescription1' => $product['name'],
-                    'itemDescription2' => '',
-                    'itemDescription3' => '',
-                    'itemDescription4' => '',
-                    'itemDescription5' => '',
-                    'quantity' => $qty,
-                    'amount' => (int)(100 * $priceWithTax), //must include tax
-                    'vatPrice' => (int)(100 * round($taxPrice, 2)),
-                    'vatPercent' => (int)(100 * $taxPercent)
-                );
-                $result = $this->getPx()->AddSingleOrderLine2($params);
-                if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-                    $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                    $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
-                }
-
-                $i++;
-            }
-
-            // Add Shipping Line
-            $shipping_method = $this->session->data['shipping_method'];
-            if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
-                $shipping = $shipping_method['cost'];
-                $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
-                $shippingTax = $shippingWithTax - $shipping;
-                $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
-
-                // Call PxOrder.AddSingleOrderLine2
-                $params = array(
-                    'accountNumber' => '',
-                    'orderRef' => $orderRef,
-                    'itemNumber' => $i,
-                    'itemDescription1' => $shipping_method['title'],
-                    'itemDescription2' => '',
-                    'itemDescription3' => '',
-                    'itemDescription4' => '',
-                    'itemDescription5' => '',
-                    'quantity' => 1,
-                    'amount' => (int)(100 * $shippingWithTax), //must include tax
-                    'vatPrice' => (int)(100 * round($shippingTax, 2)),
-                    'vatPercent' => (int)(100 * $shippingTaxPercent)
-                );
-                $result = $this->getPx()->AddSingleOrderLine2($params);
-                if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {
-                    $this->session->data['payex_error'] = $result['errorCode'] . ' (' . $result['description'] . ')';
-                    $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
-                }
-
-                $i++;
-            }
+		        $i++;
+	        }
 
             // Add Order Address
             // Call PxOrder.AddOrderAddress2

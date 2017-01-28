@@ -109,4 +109,102 @@ class ModelModulePayex extends Model
             return false;
         }
     }
+
+	/**
+	 * Get Product Lines
+	 * @param int $order_id
+	 * @param array $products
+	 * @param array $shipping_method
+	 *
+	 * @return array
+	 */
+	public function getProductItems($order_id, $products, $shipping_method) {
+		$order = $this->model_checkout_order->getOrder($order_id);
+
+		$lines = array();
+		$averageTax = array();
+		foreach ($products as $key => $product) {
+			$qty = $product['quantity'];
+			$price = $this->currency->format($product['price'] * $qty, $order['currency_code'], $order['currency_value'], false);
+			$priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
+			$taxPrice = $priceWithTax - $price;
+			$taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
+			$averageTax[] = $taxPercent;
+
+			$lines[] = array(
+				'type' => 'product',
+				'name' => $product['name'],
+				'qty' => $qty,
+				'price_with_tax' => sprintf("%.2f", $priceWithTax),
+				'price_without_tax' => sprintf("%.2f", $price),
+				'tax_price' => sprintf("%.2f", $taxPrice),
+				'tax_percent' => sprintf("%.2f", $taxPercent)
+			);
+		}
+
+		// Add Shipping Line
+		if (isset($shipping_method['cost']) && (float)$shipping_method['cost'] > 0) {
+			$shipping = $this->currency->format($shipping_method['cost'], $order['currency_code'], $order['currency_value'], false);
+			$shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
+			$shippingTax = $shippingWithTax - $shipping;
+			$shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
+			$averageTax[] = $shippingTaxPercent;
+
+			$lines[] = array(
+				'type' => 'shipping',
+				'name' => $shipping_method['title'],
+				'qty' => 1,
+				'price_with_tax' => sprintf("%.2f", $shippingWithTax),
+				'price_without_tax' => sprintf("%.2f", $shipping),
+				'tax_price' => sprintf("%.2f", $shippingTax),
+				'tax_percent' => sprintf("%.2f", $shippingTaxPercent)
+			);
+		}
+
+		// Add Coupon Line
+		$order_info = $this->model_checkout_order->getOrder($order_id);
+		$order_total_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "order_total` WHERE code = 'coupon'  AND order_id = '" . (int)$order_id . "' ORDER BY sort_order ASC");
+		if ($order_total_query && $order_total_query->rows > 0) {
+			$coupon = array_shift($order_total_query->rows);
+			$coupon['value'] = $this->currency->format($coupon['value'], $order_info['currency_code'], $order_info['currency_value'], false);
+
+			if (abs($coupon['value']) > 0) {
+				// Use average tax as discount tax for workaround
+				$couponTaxPercent = round(array_sum($averageTax) / count($averageTax));
+				$couponTax = round($coupon['value'] / 100 * $couponTaxPercent, 2);
+				$couponWithTax = $coupon['value'] + $couponTax;
+
+				$lines[] = array(
+					'type' => 'discount',
+					'name' => $coupon['title'],
+					'qty' => 1,
+					'price_with_tax' => sprintf("%.2f", $couponWithTax),
+					'price_without_tax' => sprintf("%.2f", $coupon['value']),
+					'tax_price' => sprintf("%.2f", $couponTax),
+					'tax_percent' => sprintf("%.2f", $couponTaxPercent)
+				);
+			}
+		}
+
+		// Add payment fee for Factoring
+		if ($order['payment_code'] === 'factoring' && $this->config->get('factoring_fee_fee') > 0) {
+			$fee = (float)$this->config->get('factoring_fee_fee');
+			$fee_tax_class_id = (int)$this->config->get('factoring_fee_tax_class_id');
+			$feeWithTax = $this->tax->calculate($fee, $fee_tax_class_id, 1);
+			$feeTax = $feeWithTax - $fee;
+			$feeTaxPercent = $fee != 0 ? (int)((100 * ($feeTax) / $fee)) : 0;
+
+			$lines[] = array(
+				'type' => 'fee',
+				'name' => $this->language->get('text_factoring_fee'),
+				'qty' => 1,
+				'price_with_tax' => sprintf("%.2f", $feeWithTax),
+				'price_without_tax' => sprintf("%.2f", $fee),
+				'tax_price' => sprintf("%.2f", $feeTax),
+				'tax_percent' => sprintf("%.2f", $feeTaxPercent)
+			);
+		}
+
+		return $lines;
+	}
 }
