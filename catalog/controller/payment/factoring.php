@@ -300,6 +300,8 @@ class ControllerPaymentFactoring extends Controller
      */
     protected function getInvoiceExtraPrintBlocksXML($order_id, $products, $shipping_method)
     {
+        $order = $this->model_checkout_order->getOrder($order_id);
+
         $dom = new DOMDocument('1.0', 'utf-8');
         $OnlineInvoice = $dom->createElement('OnlineInvoice');
         $dom->appendChild($OnlineInvoice);
@@ -312,7 +314,8 @@ class ControllerPaymentFactoring extends Controller
         $averageTax = array();
         foreach ($products as $key => $product) {
             $qty = $product['quantity'];
-            $price = $product['price'] * $qty;
+            $unit_price = $this->currency->format($product['price'], $order['currency_code'], $order['currency_value'], false);
+            $price = $this->currency->format($product['price'] * $qty, $order['currency_code'], $order['currency_value'], false);
             $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
             $taxPrice = $priceWithTax - $price;
             $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
@@ -321,7 +324,7 @@ class ControllerPaymentFactoring extends Controller
             $OrderLine = $dom->createElement('OrderLine');
             $OrderLine->appendChild($dom->createElement('Product', $product['name']));
             $OrderLine->appendChild($dom->createElement('Qty', $qty));
-            $OrderLine->appendChild($dom->createElement('UnitPrice', $product['price']));
+            $OrderLine->appendChild($dom->createElement('UnitPrice', $unit_price));
             $OrderLine->appendChild($dom->createElement('VatRate', $taxPercent));
             $OrderLine->appendChild($dom->createElement('VatAmount', $taxPrice));
             $OrderLine->appendChild($dom->createElement('Amount', $priceWithTax));
@@ -330,7 +333,7 @@ class ControllerPaymentFactoring extends Controller
 
         // Add Shipping Line
         if (isset($shipping_method['cost']) && (float)$shipping_method['cost'] > 0) {
-            $shipping = $shipping_method['cost'];
+            $shipping = $this->currency->format($shipping_method['cost'], $order['currency_code'], $order['currency_value'], false);
             $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
             $shippingTax = $shippingWithTax - $shipping;
             $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;

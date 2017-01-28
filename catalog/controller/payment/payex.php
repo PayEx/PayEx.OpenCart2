@@ -103,7 +103,7 @@ class ControllerPaymentPayex extends Controller
             $i = 1;
             foreach ($this->cart->getProducts() as $product) {
                 $qty = $product['quantity'];
-                $price = $product['price'] * $qty;
+                $price = $this->currency->format($product['price'] * $qty, $order['currency_code'], $order['currency_value'], false);
                 $priceWithTax = $this->tax->calculate($price, $product['tax_class_id'], 1);
                 $taxPrice = $priceWithTax - $price;
                 $taxPercent = ($taxPrice > 0) ? round(100 / (($priceWithTax - $taxPrice) / $taxPrice)) : 0;
@@ -135,7 +135,7 @@ class ControllerPaymentPayex extends Controller
             // Add Shipping Line
             $shipping_method = $this->session->data['shipping_method'];
             if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
-                $shipping = $shipping_method['cost'];
+                $shipping = $this->currency->format($shipping_method['cost'], $order['currency_code'], $order['currency_value'], false);
                 $shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
                 $shippingTax = $shippingWithTax - $shipping;
                 $shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
