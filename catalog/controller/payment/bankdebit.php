@@ -72,6 +72,12 @@ class ControllerPaymentBankdebit extends Controller
             $this->response->redirect($this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/error', '', 'SSL'));
         }
 
+	    // Client language
+	    $language = $this->config->get('bankdebit_client_language');
+	    if (empty($language)) {
+		    $language = $this->getLocale($this->language->get('code'));
+	    }
+
         $order = $this->model_checkout_order->getOrder($order_id);
         //$amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
 
@@ -108,7 +114,7 @@ class ControllerPaymentBankdebit extends Controller
             'view' => 'DIRECTDEBIT',
             'agreementRef' => '',
             'cancelUrl' => $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/cancel', '', 'SSL'),
-            'clientLanguage' => $this->getLocale($this->language->get('code'))
+            'clientLanguage' => $language
         );
         $result = $this->getPx()->Initialize8($params);
 

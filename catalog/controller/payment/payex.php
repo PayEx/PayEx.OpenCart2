@@ -67,6 +67,12 @@ class ControllerPaymentPayex extends Controller
             }
         }
 
+        // Client language
+	    $language = $this->config->get('payex_client_language');
+        if (empty($language)) {
+	        $language = $this->getLocale($this->language->get('code'));
+        }
+
         //$amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
 
 	    // Get products of order
@@ -102,7 +108,7 @@ class ControllerPaymentPayex extends Controller
             'view' => $this->config->get('payex_paymentview'),
             'agreementRef' => '',
             'cancelUrl' => $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/cancel', '', 'SSL'),
-            'clientLanguage' => $this->getLocale($this->language->get('code'))
+            'clientLanguage' => $language
         );
         $result = $this->getPx()->Initialize8($params);
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {

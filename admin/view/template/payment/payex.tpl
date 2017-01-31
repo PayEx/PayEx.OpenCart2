@@ -143,6 +143,25 @@
                     <?php endif; ?>
                 </select></td>
         </tr>
+		<tr>
+			<td><?php echo $text_client_language; ?></td>
+			<td>
+				<select name="payex_client_language">
+					<option value="" <?php echo $payex_client_language === '' ? 'selected="selected"' : ''?>>Detect automatically</option>
+					<option value="en-US" <?php echo $payex_client_language === 'en-US' ? 'selected="selected"' : ''?>>English</option>
+					<option value="sv-SE" <?php echo $payex_client_language === 'sv-SE' ? 'selected="selected"' : ''?>>Swedish</option>
+					<option value="nb-NO" <?php echo $payex_client_language === 'nb-NO' ? 'selected="selected"' : ''?>>Norway</option>
+					<option value="da-DK" <?php echo $payex_client_language === 'da-DK' ? 'selected="selected"' : ''?>>Danish</option>
+					<option value="es-ES" <?php echo $payex_client_language === 'es-ES' ? 'selected="selected"' : ''?>>Spanish</option>
+					<option value="de-DE" <?php echo $payex_client_language === 'de-DE' ? 'selected="selected"' : ''?>>German</option>
+					<option value="fi-FI" <?php echo $payex_client_language === 'fi-FI' ? 'selected="selected"' : ''?>>Finnish</option>
+					<option value="fr-FR" <?php echo $payex_client_language === 'fr-FR' ? 'selected="selected"' : ''?>>French</option>
+					<option value="pl-PL" <?php echo $payex_client_language === 'pl-PL' ? 'selected="selected"' : ''?>>Polish</option>
+					<option value="cs-CZ" <?php echo $payex_client_language === 'cs-CZ' ? 'selected="selected"' : ''?>>Czech</option>
+					<option value="hu-HU" <?php echo $payex_client_language === 'hu-HU' ? 'selected="selected"' : ''?>>Hungarian</option>
+				</select>
+			</td>
+		</tr>
         <tr>
             <td><?php echo $text_total; ?></td>
             <td><input type="text" name="payex_total" value="<?php echo $payex_total; ?>"/></td>

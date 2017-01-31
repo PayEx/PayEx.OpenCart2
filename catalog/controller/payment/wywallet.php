@@ -63,10 +63,27 @@ class ControllerPaymentWywallet extends Controller
             $additional .= $separator . 'USECSS=RESPONSIVEDESIGN';
         }
 
+	    // Client language
+	    $language = $this->config->get('wywallet_client_language');
+	    if (empty($language)) {
+		    $language = $this->getLocale($this->language->get('code'));
+	    }
+
         //$amount = $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
 
 	    // Get products of order
 	    $items = $this->model_module_payex->getProductItems($order_id, $this->cart->getProducts(), $this->session->data['shipping_method']);
+
+	    // Calculate order amount
+	    if (function_exists('array_column')) {
+		    $amount = array_sum(array_column($items, 'price_with_tax'));
+	    } else {
+		    // For older PHP versions (< 5.5.0)
+		    $amount = 0;
+		    foreach ($items as $item) {
+			    $amount += $item['price_with_tax'];
+		    }
+	    }
 
         // Call PxOrder.Initialize8
         $params = array(
@@ -87,7 +104,7 @@ class ControllerPaymentWywallet extends Controller
             'view' => 'MICROACCOUNT',
             'agreementRef' => '',
             'cancelUrl' => $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/cancel', '', 'SSL'),
-            'clientLanguage' => $this->getLocale($this->language->get('code'))
+            'clientLanguage' => $language
         );
         $result = $this->getPx()->Initialize8($params);
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {

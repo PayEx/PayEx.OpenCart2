@@ -62,6 +62,12 @@ class ControllerPaymentSwish extends Controller
             $additional = 'RESPONSIVE=1';
         }
 
+	    // Client language
+	    $language = $this->config->get('swish_client_language');
+	    if (empty($language)) {
+		    $language = $this->getLocale($this->language->get('code'));
+	    }
+
 	    // Get products of order
 	    $items = $this->model_module_payex->getProductItems($order_id, $this->cart->getProducts(), $this->session->data['shipping_method']);
 
@@ -95,7 +101,7 @@ class ControllerPaymentSwish extends Controller
             'view' => 'SWISH',
             'agreementRef' => '',
             'cancelUrl' => $this->url->link( OcRoute::getPaymentRoute('payment/') . '' . $this->_module_name . '/cancel', '', 'SSL'),
-            'clientLanguage' => $this->getLocale($this->language->get('code'))
+            'clientLanguage' => $language
         );
         $result = $this->getPx()->Initialize8($params);
         if ($result['code'] !== 'OK' || $result['description'] !== 'OK' || $result['errorCode'] !== 'OK') {

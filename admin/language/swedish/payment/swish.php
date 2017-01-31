@@ -15,6 +15,7 @@ $_['text_encryption_key'] = 'Krypteringsnyckel';
 $_['text_mode'] = 'Läge';
 $_['text_responsive'] = 'Enable Responsive Skinning';
 $_['text_checkout_info'] = 'Skicka orderrader och faktura/leveransadress till PayEx';
+$_['text_client_language'] = 'Client language';
 $_['text_total'] = 'Total:<br /><span class="help">The checkout total the order must reach before this payment method becomes active.</span>';
 $_['text_complete_status'] = 'Completed Status';
 $_['text_pending_status'] = 'Pending Status';
