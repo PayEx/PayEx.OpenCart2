@@ -1,3 +1,7 @@
+Version 1.1.2
+* Currency conversion fixes
+* Client language option
+
 Version 1.1.1
 * Prevent to multiple clicks of order button
 * Fixed wrong order amount when multiple currency
