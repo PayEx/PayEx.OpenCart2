@@ -76,6 +76,10 @@ class ControllerPaymentFactoring extends Controller
      */
     function index()
     {
+        if (isset($_GET['route']) && $_GET['route'] === 'sale/order/info') {
+            return;
+        }
+
         $this->load->language( OcRoute::getPaymentRoute('payment/') . $this->_module_name);
         $this->load->model('setting/setting');
 
