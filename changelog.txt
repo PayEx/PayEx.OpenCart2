@@ -1,3 +1,7 @@
+Version 1.1.3
+* Implemented MobilePay Online method
+* Bugfixes
+
 Version 1.1.2
 * Currency conversion fixes
 * Client language option
