@@ -182,6 +182,7 @@ class ControllerPaymentPayex extends Controller
                 'deliveryGsm' => '',
             );
 
+            $shipping_method = $this->session->data['shipping_method'];
             if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
                 $shipping_params = array(
                     'deliveryFirstName' => $order['shipping_firstname'],
