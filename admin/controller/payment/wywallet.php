@@ -260,6 +260,9 @@ class ControllerPaymentWywallet extends Controller
             }
         }
 
+        // Errors
+        $data['error'] = $this->error;
+
         // Breadcrumbs
         $data['breadcrumbs'] = array();
         $data['breadcrumbs'][] = array(

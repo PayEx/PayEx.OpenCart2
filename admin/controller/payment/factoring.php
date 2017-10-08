@@ -113,7 +113,6 @@ class ControllerPaymentFactoring extends Controller
 
         $data['action'] = $this->url->link( OcRoute::getPaymentRoute('payment/') . $this->_module_name, 'token=' . $this->session->data['token'], 'SSL');
         $data['cancel'] = $this->url->link(OcRoute::getExtension(), 'token=' . $this->session->data['token'], 'SSL');
-        $data['error'] = $this->error;
 
         if (($this->request->server['REQUEST_METHOD'] === 'POST')) {
 			
@@ -279,6 +278,9 @@ class ControllerPaymentFactoring extends Controller
                 $this->save();
             }
         }
+
+        // Errors
+        $data['error'] = $this->error;
 
         // Breadcrumbs
         $data['breadcrumbs'] = array();

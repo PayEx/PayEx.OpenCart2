@@ -20,11 +20,11 @@
 <div class="container-fluid">
 
 
-<?php foreach ($error as $item) : ?>
-<div class="warning">
-    <?php echo $item ?>
-</div>
-<?php endforeach; ?>
+    <?php foreach ($error as $item) : ?>
+        <div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> <?php echo $item; ?>
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+        </div>
+    <?php endforeach; ?>
 <div class="panel panel-default">
 			<div class="panel-body">
 
