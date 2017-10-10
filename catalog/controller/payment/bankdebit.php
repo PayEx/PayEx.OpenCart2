@@ -2,7 +2,7 @@
 if (!defined('DIR_APPLICATION')) {
     die();
 }
-require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
+require_once DIR_SYSTEM . '../vendors/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
 require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
@@ -188,6 +188,7 @@ class ControllerPaymentBankdebit extends Controller
                 'deliveryGsm' => '',
             );
 
+            $shipping_method = $this->session->data['shipping_method'];
             if (isset($shipping_method['cost']) && $shipping_method['cost'] > 0) {
                 $shipping_params = array(
                     'deliveryFirstName' => $order['shipping_firstname'],

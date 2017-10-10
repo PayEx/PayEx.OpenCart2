@@ -186,6 +186,30 @@ class ModelModulePayex extends Model
 			}
 		}
 
+		// Add Voucher Line
+        $order_total_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "order_total` WHERE code = 'voucher'  AND order_id = '" . (int)$order_id . "' ORDER BY sort_order ASC");
+        if ($order_total_query && $order_total_query->rows > 0) {
+            $voucher = array_shift($order_total_query->rows);
+            $voucher['value'] = $this->currency->format($voucher['value'], $order_info['currency_code'], $order_info['currency_value'], false);
+
+            if (abs($voucher['value']) > 0) {
+                // Use average tax as discount tax for workaround
+                $voucherTaxPercent = round(array_sum($averageTax) / count($averageTax));
+                $voucherTax = round($voucher['value'] / 100 * $voucherTaxPercent, 2);
+                $voucherWithTax = $voucher['value'] + $voucherTax;
+
+                $lines[] = array(
+                    'type' => 'discount',
+                    'name' => $voucher['title'],
+                    'qty' => 1,
+                    'price_with_tax' => sprintf("%.2f", $voucherWithTax),
+                    'price_without_tax' => sprintf("%.2f", $voucher['value']),
+                    'tax_price' => sprintf("%.2f", $voucherTax),
+                    'tax_percent' => sprintf("%.2f", $voucherTaxPercent)
+                );
+            }
+        }
+
 		// Add payment fee for Factoring
 		if ($order['payment_code'] === 'factoring' && $this->config->get('factoring_fee_fee') > 0) {
 			$fee = (float)$this->config->get('factoring_fee_fee');

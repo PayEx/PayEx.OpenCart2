@@ -3,7 +3,7 @@ if (!defined('DIR_APPLICATION')) {
     die();
 }
 
-require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
+require_once DIR_SYSTEM . '../vendors/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
 require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
@@ -259,6 +259,9 @@ class ControllerPaymentWywallet extends Controller
                 $this->save();
             }
         }
+
+        // Errors
+        $data['error'] = $this->error;
 
         // Breadcrumbs
         $data['breadcrumbs'] = array();

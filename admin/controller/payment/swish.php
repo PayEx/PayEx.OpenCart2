@@ -3,7 +3,7 @@ if (!defined('DIR_APPLICATION')) {
     die();
 }
 
-require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
+require_once DIR_SYSTEM . '../vendors/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
 require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
@@ -118,7 +118,6 @@ class ControllerPaymentSwish extends Controller
 
         $data['action'] = $this->url->link( OcRoute::getPaymentRoute('payment/')  . $this->_module_name, 'token=' . $this->session->data['token'], 'SSL');
         $data['cancel'] = $this->url->link( OcRoute::getExtension(), 'token=' . $this->session->data['token'], 'SSL');
-        $data['error'] = $this->error;
 
         if (($this->request->server['REQUEST_METHOD'] === 'POST')) {
             if (isset($this->request->post['action'])) {
@@ -256,6 +255,9 @@ class ControllerPaymentSwish extends Controller
                 $this->save();
             }
         }
+
+        // Errors
+        $data['error'] = $this->error;
 
         // Breadcrumbs
         $data['breadcrumbs'] = array();

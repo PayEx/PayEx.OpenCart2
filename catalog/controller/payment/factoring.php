@@ -2,7 +2,7 @@
 if (!defined('DIR_APPLICATION')) {
     die();
 }
-require_once DIR_SYSTEM . '../vendor/payex/php-api/src/PayEx/Px.php';
+require_once DIR_SYSTEM . '../vendors/payex/php-api/src/PayEx/Px.php';
 require_once DIR_SYSTEM . 'Payex/Payex.php';
 require_once DIR_SYSTEM . 'Payex/OcRoute.php';
 
@@ -156,7 +156,7 @@ class ControllerPaymentFactoring extends Controller
                     'legalName' => trim($order['payment_firstname'] . ' ' . $order['payment_lastname']),
                     'streetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
                     'coAddress' => '',
-                    'zipCode' => $order['payment_postcode'],
+                    'zipCode' => str_replace(' ', '', $order['payment_postcode']),
                     'city' => $order['payment_city'],
                     'countryCode' => $order['payment_iso_code_2'],
                     'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXFINANCINGINVOICESE' : 'PXFINANCINGINVOICENO',
@@ -175,7 +175,7 @@ class ControllerPaymentFactoring extends Controller
                     'legalName' => trim($order['payment_firstname'] . ' ' . $order['payment_lastname']),
                     'streetAddress' => trim($order['payment_address_1'] . ' ' . $order['payment_address_2']),
                     'coAddress' => '',
-                    'zipCode' => $order['payment_postcode'],
+                    'zipCode' => str_replace(' ', '', $order['payment_postcode']),
                     'city' => $order['payment_city'],
                     'countryCode' => $order['payment_iso_code_2'],
                     'paymentMethod' => $order['payment_iso_code_2'] === 'SE' ? 'PXCREDITACCOUNTSE' : 'PXCREDITACCOUNTNO',
