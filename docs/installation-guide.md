@@ -12,7 +12,7 @@ Php extensions:
 Installation
 ------------
 
-We can only guarantee the modules work on opencart version 1.5.6.1-1.5.6.4 aswell as the standard opencart checkout.
+This module support OpenCart 2.* with the standard opencart checkout.
 
 *Transferring the modules over to your FTP/SFTP location:*
 
