@@ -1,3 +1,10 @@
+Version 1.1.4
+* Fixed error messages in admin
+* Factoring: Remove spaces in Zip code
+* Fixed bug with delivery address
+* Gift Vouchers support
+* Use "vendors" directory instead "vendor"
+
 Version 1.1.3
 * Implemented MobilePay Online method
 * Bugfixes

@@ -5,7 +5,7 @@ if (!defined('DIR_APPLICATION')) {
 
 class ModelPaymentFactoring extends Model
 {
-    protected $_module_version = '1.0.4';
+    protected $_module_version = '1.1.4';
 
     public function __construct($registry) {
         parent::__construct($registry);
