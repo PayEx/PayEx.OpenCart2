@@ -24,8 +24,9 @@ class OcRoute
 			return ''.$route;
 		}elseif(version_compare(VERSION,'2.2.0.0','>=')){
 			return $route;
-		}elseif(version_compare(VERSION,'2.0.0.0','<=')){
-			return 'default/template/'.$route;
+		} else {
+		    // OC v2.0+
+			return 'default/template/' . $route;
 		}
 	}
 }
