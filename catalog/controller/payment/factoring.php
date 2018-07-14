@@ -121,7 +121,7 @@ class ControllerPaymentFactoring extends Controller
         $params = array(
             'accountNumber' => '',
             'purchaseOperation' => 'AUTHORIZATION',
-            'price' => round($amount * 100),
+            'price' => bcmul(100, $amount),
             'priceArgList' => '',
             'currency' => strtoupper($order['currency_code']),
             'vat' => 0,

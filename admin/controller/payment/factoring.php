@@ -162,7 +162,7 @@ class ControllerPaymentFactoring extends Controller
                         $params = array(
                             'accountNumber' => '',
                             'transactionNumber' => $transaction_id,
-                            'amount' => round(100 * $amount),
+                            'amount' => bcmul(100, $amount),
                             'orderId' => $order_id,
                             'vatAmount' => 0,
                             'additionalValues' => 'FINANCINGINVOICE_ORDERLINES=' . urlencode($xml)
@@ -235,7 +235,7 @@ class ControllerPaymentFactoring extends Controller
                         $params = array(
                             'accountNumber' => '',
                             'transactionNumber' => $transaction_id,
-                            'amount' => round(100 * $total_refunded),
+                            'amount' => bcmul(100, $total_refunded),
                             'orderId' => $order_id,
                             'vatAmount' => 0,
                             'additionalValues' => ''

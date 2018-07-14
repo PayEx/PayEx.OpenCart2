@@ -147,7 +147,7 @@ class ModelModulePayex extends Model
 			$shipping = $this->currency->format($shipping_method['cost'], $order['currency_code'], $order['currency_value'], false);
 			$shippingWithTax = $this->tax->calculate($shipping, $shipping_method['tax_class_id'], 1);
 			$shippingTax = $shippingWithTax - $shipping;
-			$shippingTaxPercent = $shipping != 0 ? (int)((100 * ($shippingTax) / $shipping)) : 0;
+			$shippingTaxPercent = $shipping != 0 ? bcmul(100, ($shippingTax) / $shipping) : 0;
 			$averageTax[] = $shippingTaxPercent;
 
 			$lines[] = array(
