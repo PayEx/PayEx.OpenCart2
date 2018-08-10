@@ -1,3 +1,9 @@
+Version 1.1.5
+* Financing Invoice: OnlineInvoice xml changes
+* Financing Invoice: Use bcmath to avoid problem with round
+* Updated SOAP WSDL for test environment
+* Routing fix for OC 2.0
+
 Version 1.1.4
 * Fixed error messages in admin
 * Factoring: Remove spaces in Zip code
