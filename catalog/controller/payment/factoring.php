@@ -327,7 +327,7 @@ class ControllerPaymentFactoring extends Controller
 
 	    }
 
-        return str_replace("\n", '', $dom->saveXML());
+	    return str_replace("\n", '', html_entity_decode(str_replace('xsi:xsd', 'xmlns:xsd', $dom->saveXML()), ENT_COMPAT|ENT_XHTML, 'UTF-8'));
     }
 
     /**
@@ -340,21 +340,25 @@ class ControllerPaymentFactoring extends Controller
         $products = array();
 
         // Parse order lines
-        $dom = new DOMDocument('1.0', 'utf-8');
-        $dom->loadXML($xml);
-        $order_lines = $dom->getElementsByTagName('OrderLine');
-        foreach ($order_lines as $order_line) {
-            if ($order_line->childNodes->length) {
-                $tmp = array();
-                foreach ($order_line->childNodes as $i) {
-                    $tmp[$i->nodeName] = $i->nodeValue;
-                }
+	    $dom = new DOMDocument('1.0', 'utf-8');
+	    $dom->loadXML($xml);
+	    $order_lines = $dom->getElementsByTagName('OrderLine');
+	    foreach ($order_lines as $order_line) {
+		    if ($order_line->childNodes->length === 0) {
+			    continue;
+		    }
 
-                $products[] = $tmp;
-            }
-        }
+		    $product = array();
+		    foreach ($order_line->childNodes as $i) {
+			    if ($i->nodeType === XML_ELEMENT_NODE) {
+				    $product[$i->nodeName] = $i->nodeValue;
+			    }
+		    }
 
-        if (count($products) > 0) {
+		    $products[] = $product;
+	    }
+
+	    if (count($products) > 0) {
             // Clean up
             $this->db->query(sprintf("DELETE FROM " . DB_PREFIX . "payex_factoring_items WHERE order_id = '%s';", (int)$order_id));
 

@@ -408,7 +408,7 @@ class ControllerPaymentFactoring extends Controller
             $OrderLines->appendChild($OrderLine);
         }
 
-        return str_replace("\n", '', $dom->saveXML());
+	    return str_replace("\n", '', html_entity_decode(str_replace('xsi:xsd', 'xmlns:xsd', $dom->saveXML()), ENT_COMPAT|ENT_XHTML, 'UTF-8'));
     }
 
     /**
@@ -490,6 +490,6 @@ CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "payex_factoring_items` (
             $OrderLines->appendChild($OrderLine);
         }
 
-        return str_replace("\n", '', $dom->saveXML());
+	    return str_replace("\n", '', html_entity_decode(str_replace('xsi:xsd', 'xmlns:xsd', $dom->saveXML()), ENT_COMPAT|ENT_XHTML, 'UTF-8'));
     }
 }
