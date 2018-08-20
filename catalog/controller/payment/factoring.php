@@ -314,7 +314,7 @@ class ControllerPaymentFactoring extends Controller
 	    // Get products of order
 	    $items = $this->model_module_payex->getProductItems($order_id, $this->cart->getProducts(), $this->session->data['shipping_method']);
 	    foreach ($items as $item) {
-		    $unit_price = round($item['price_with_tax'] / $item['qty'], 2);
+		    $unit_price = round($item['price_without_tax'] / $item['qty'], 2);
 
 		    $OrderLine = $dom->createElement('OrderLine');
 		    $OrderLine->appendChild($dom->createElement('Product', $item['name']));
