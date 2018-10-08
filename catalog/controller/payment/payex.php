@@ -546,6 +546,7 @@ class ControllerPaymentPayex extends Controller
      */
     protected function log($message)
     {
-        // @todo Debug log
+	    $log = new Log('payex.log');
+	    $log->write($message);
     }
 }
