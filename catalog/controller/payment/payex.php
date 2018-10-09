@@ -358,6 +358,35 @@ class ControllerPaymentPayex extends Controller
             exit('FAILURE');
         }
 
+	    // Detect Payment Method of Order
+	    $order_id = $this->request->post['orderId'];
+
+	    // Check orderID in Store
+	    $order_info = $this->model_checkout_order->getOrder($order_id);
+	    if (!$order_info) {
+		    $this->log('TC: Error: OrderId: ' . $order_id . ' not found in store.');
+		    header(sprintf('%s %s %s', 'HTTP/1.1', '500', 'FAILURE'), true, '500');
+		    header(sprintf('Status: %s %s', '500', 'FAILURE'), true, '500');
+		    exit('FAILURE');
+	    }
+
+	    // Get Account Details
+	    $payment_method = $order_info['payment_method'];
+	    $account_number = $this->config->get($payment_method . '_account_number');
+	    $encryption_key = $this->config->get($payment_method . '_encryption_key');
+	    $mode = $this->config->get($payment_method . '_mode');
+
+	    // Check Requested Account Number
+	    if ($this->request->post['accountNumber'] !== $account_number) {
+		    $this->log('TC: Error: Can\'t to get account details of : ' . $this->request->post['accountNumber']);
+		    header(sprintf('%s %s %s', 'HTTP/1.1', '500', 'FAILURE'), true, '500');
+		    header(sprintf('Status: %s %s', '500', 'FAILURE'), true, '500');
+		    exit('FAILURE');
+	    }
+
+	    // Define PayEx Settings
+	    $this->getPx()->setEnvironment($account_number, $encryption_key, ($mode !== 'LIVE'));
+
         // Get Transaction Details
         $transactionId = $this->request->post['transactionNumber'];
 
@@ -368,7 +397,10 @@ class ControllerPaymentPayex extends Controller
         );
         $details = $this->getPx()->GetTransactionDetails2($params);
         if ($details['code'] !== 'OK' || $details['description'] !== 'OK' || $details['errorCode'] !== 'OK') {
-            exit('Error: ' . $details['errorCode'] . ' (' . $details['description'] . ')');
+	        $this->log('TC: PxOrder.GetTransactionDetails2 Error: ' . var_export($details, true));
+	        header(sprintf('%s %s %s', 'HTTP/1.1', '500', 'FAILURE'), true, '500');
+	        header(sprintf('Status: %s %s', '500', 'FAILURE'), true, '500');
+	        exit('FAILURE');
         }
 
         $order_id = $details['orderId'];
@@ -378,13 +410,19 @@ class ControllerPaymentPayex extends Controller
         $this->log('TC: Transaction Status: ' . $transactionStatus);
         $this->log('TC: OrderId: ' . $order_id);
 
-        // @todo Check orderID in Store
+	    // Get Order Statuses ID
+	    $completed_status_id = $this->config->get($payment_method . '_completed_status_id');
+	    $pending_status_id = $this->config->get($payment_method . '_pending_status_id');
+	    $canceled_status_id = $this->config->get($payment_method . '_canceled_status_id');
+	    $failed_status_id = $this->config->get($payment_method . '_failed_status_id');
+	    $refunded_status_id = $this->config->get($payment_method . '_refunded_status_id');
 
         /* 0=Sale, 1=Initialize, 2=Credit, 3=Authorize, 4=Cancel, 5=Failure, 6=Capture */
         switch ($transactionStatus) {
             case 0;
             case 1;
             case 3:
+	        case 6:
                 // Complete order
                 $params = array(
                     'accountNumber' => '',
@@ -392,40 +430,27 @@ class ControllerPaymentPayex extends Controller
                 );
                 $result = $this->getPx()->Complete($params);
                 if ($result['errorCodeSimple'] !== 'OK') {
-                    exit('Error: ' . $details['errorCode'] . ' (' . $details['description'] . ')');
+	                $this->log('TC: PxOrder.Complete Error: ' . var_export($result, true));
+	                header(sprintf('%s %s %s', 'HTTP/1.1', '500', 'FAILURE'), true, '500');
+	                header(sprintf('Status: %s %s', '500', 'FAILURE'), true, '500');
+	                exit('FAILURE');
                 }
 
                 // Save Transaction
                 $this->model_module_payex->addTransaction($order_id, $result['transactionNumber'], $result['transactionStatus'], $result, isset($result['date']) ? strtotime($result['date']) : time());
 
-                switch ((int)$result['transactionStatus']) {
-                    case 0:
-                    case 6:
-                        $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_completed_status_id'), '', false);
-                        break;
-                    case 1:
-                    case 3:
-                        $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_pending_status_id'), '', false);
-                        break;
-                    case 4:
-                        // Cancel
-                        $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_canceled_status_id'), '', false);
-                        break;
-                    case 5:
-                    default:
-                        // Cancel when Errors
-                        $error_code = $result['transactionErrorCode'];
-                        $error_description = $result['transactionThirdPartyError'];
-                        if (empty($error_code) && empty($error_description)) {
-                            $error_code = $result['code'];
-                            $error_description = $result['description'];
-                        }
-                        $message = $error_code . ' (' . $error_description . ')';
-                        $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_failed_status_id'), $message, true);
-                        break;
-                }
+	            // Select Order Status
+	            if (in_array($transactionStatus, array(0, 6))) {
+		            $new_status_id = $completed_status_id;
+	            } elseif ($transactionStatus === 3 || (isset($result['pending']) && $result['pending'] === 'true')) {
+		            $new_status_id = $pending_status_id;
+	            } else {
+		            $new_status_id = $this->config->get('config_complete_status');
+	            }
 
-                $this->log('TC: OrderId ' . $order_id . ' Complete with TransactionStatus ' . $result['transactionStatus'], $order_id);
+	            $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $new_status_id, '', false);
+
+                $this->log('TC: OrderId ' . $order_id . ' Complete with TransactionStatus ' . $transactionStatus, $order_id);
                 break;
             case 2:
                 // Refund
@@ -433,7 +458,7 @@ class ControllerPaymentPayex extends Controller
                 $this->model_module_payex->addTransaction($order_id, $transactionId, $details['transactionStatus'], $details, isset($details['orderCreated']) ? strtotime($details['orderCreated']) : time());
 
                 // Set Order Status
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_completed_status_id'), '', false);
+                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $refunded_status_id, '', false);
 
                 //@todo Re-stock Items when Refund?
                 $this->log('TC: OrderId ' . $order_id . ' refunded', $order_id);
@@ -444,7 +469,7 @@ class ControllerPaymentPayex extends Controller
                 $this->model_module_payex->addTransaction($order_id, $transactionId, $details['transactionStatus'], $details, isset($details['orderCreated']) ? strtotime($details['orderCreated']) : time());
 
                 // Set Order Status
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_canceled_status_id'), '', false);
+                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $canceled_status_id, '', false);
 
                 $this->log('TC: OrderId ' . $order_id . ' canceled', $order_id);
                 break;
@@ -461,19 +486,9 @@ class ControllerPaymentPayex extends Controller
                     $error_description = $details['description'];
                 }
                 $message = $error_code . ' (' . $error_description . ')';
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_failed_status_id'), $message, true);
+                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $failed_status_id, $message, true);
 
                 $this->log('TC: OrderId ' . $order_id . ' canceled', $order_id);
-                break;
-            case 6:
-                // Set Order Status to captured
-                // Save Transaction
-                $this->model_module_payex->addTransaction($order_id, $transactionId, $details['transactionStatus'], $details, isset($details['orderCreated']) ? strtotime($details['orderCreated']) : time());
-
-                // Set Order Status
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('payex_completed_status_id'), '', false);
-
-                $this->log('TC: OrderId ' . $order_id . ' captured', $order_id);
                 break;
             default:
                 $this->log('TC: Unknown Transaction Status', $order_id);
