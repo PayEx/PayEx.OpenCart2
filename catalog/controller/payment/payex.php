@@ -371,7 +371,7 @@ class ControllerPaymentPayex extends Controller
 	    }
 
 	    // Get Account Details
-	    $payment_method = $order_info['payment_method'];
+	    $payment_method = $order_info['payment_code'];
 	    $account_number = $this->config->get($payment_method . '_account_number');
 	    $encryption_key = $this->config->get($payment_method . '_encryption_key');
 	    $mode = $this->config->get($payment_method . '_mode');
@@ -448,7 +448,7 @@ class ControllerPaymentPayex extends Controller
 		            $new_status_id = $this->config->get('config_complete_status');
 	            }
 
-	            $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $new_status_id, '', false);
+	            $this->model_checkout_order->addOrderHistory($order_id, $new_status_id, '', false);
 
                 $this->log('TC: OrderId ' . $order_id . ' Complete with TransactionStatus ' . $transactionStatus, $order_id);
                 break;
@@ -458,7 +458,7 @@ class ControllerPaymentPayex extends Controller
                 $this->model_module_payex->addTransaction($order_id, $transactionId, $details['transactionStatus'], $details, isset($details['orderCreated']) ? strtotime($details['orderCreated']) : time());
 
                 // Set Order Status
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $refunded_status_id, '', false);
+                $this->model_checkout_order->addOrderHistory($order_id, $refunded_status_id, '', false);
 
                 //@todo Re-stock Items when Refund?
                 $this->log('TC: OrderId ' . $order_id . ' refunded', $order_id);
@@ -469,7 +469,7 @@ class ControllerPaymentPayex extends Controller
                 $this->model_module_payex->addTransaction($order_id, $transactionId, $details['transactionStatus'], $details, isset($details['orderCreated']) ? strtotime($details['orderCreated']) : time());
 
                 // Set Order Status
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $canceled_status_id, '', false);
+                $this->model_checkout_order->addOrderHistory($order_id, $canceled_status_id, '', false);
 
                 $this->log('TC: OrderId ' . $order_id . ' canceled', $order_id);
                 break;
@@ -486,7 +486,7 @@ class ControllerPaymentPayex extends Controller
                     $error_description = $details['description'];
                 }
                 $message = $error_code . ' (' . $error_description . ')';
-                $this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $failed_status_id, $message, true);
+                $this->model_checkout_order->addOrderHistory($order_id, $failed_status_id, $message, true);
 
                 $this->log('TC: OrderId ' . $order_id . ' canceled', $order_id);
                 break;
